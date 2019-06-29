@@ -1,8 +1,23 @@
 defmodule HammoxTest do
-  use ExUnit.Case
-  doctest Hammox
+  use ExUnit.Case, async: true
 
-  test "greets the world" do
-    assert Hammox.hello() == :world
+  import Mox
+
+  defmodule TestBehaviour do
+    @callback foo(param :: atom()) :: atom()
+  end
+
+  defmodule TestImplementation do
+    @behaviour TestBehaviour
+
+    def foo(_) do
+      :bar
+    end
+  end
+
+  test "basic Mox setup" do
+    defmock(TestMock, for: TestBehaviour)
+    TestMock |> expect(:foo, fn :param -> :baz end)
+    assert :baz == TestMock.foo(:param)
   end
 end
