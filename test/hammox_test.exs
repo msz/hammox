@@ -1,7 +1,7 @@
 defmodule HammoxTest do
   use ExUnit.Case, async: true
 
-  import Mox
+  import Hammox
 
   defmodule TestBehaviour do
     @callback foo(param :: atom()) :: atom()
