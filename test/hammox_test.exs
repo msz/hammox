@@ -8,9 +8,14 @@ defmodule HammoxTest do
     :ok
   end
 
-  test "basic Mox setup" do
+  test "return value check pass" do
     TestMock |> expect(:foo, fn :param -> :baz end)
     assert :baz == TestMock.foo(:param)
+  end
+
+  test "return value check fail" do
+    TestMock |> expect(:foo, fn :param -> "baz" end)
+    assert_raise(RuntimeError, fn -> TestMock.foo(:param) end)
   end
 
   describe "fetch_typespec/3" do
