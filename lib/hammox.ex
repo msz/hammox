@@ -42,4 +42,18 @@ defmodule Hammox do
   def verify_on_exit!(context \\ %{}) do
     Mox.verify_on_exit!(context)
   end
+
+  def fetch_typespec(mock_name, function_name, arity)
+      when is_atom(mock_name) and is_atom(function_name) and is_integer(arity) do
+    [{{^function_name, ^arity}, [typespec]}] =
+      mock_name.__mock_for__()
+      |> Enum.map(fn behaviour ->
+        {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour)
+        callbacks
+      end)
+      |> Enum.concat()
+      |> Enum.filter(fn callback -> match?({{^function_name, ^arity}, _}, callback) end)
+
+    typespec
+  end
 end

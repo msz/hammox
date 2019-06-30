@@ -3,21 +3,24 @@ defmodule HammoxTest do
 
   import Hammox
 
-  defmodule TestBehaviour do
-    @callback foo(param :: atom()) :: atom()
-  end
-
-  defmodule TestImplementation do
-    @behaviour TestBehaviour
-
-    def foo(_) do
-      :bar
-    end
+  setup_all do
+    defmock(TestMock, for: Hammox.Test.Behaviour)
+    :ok
   end
 
   test "basic Mox setup" do
-    defmock(TestMock, for: TestBehaviour)
     TestMock |> expect(:foo, fn :param -> :baz end)
     assert :baz == TestMock.foo(:param)
+  end
+
+  describe "fetch_typespec/3" do
+    test "gets callbacks for TestMock" do
+      assert {:type, _, :fun,
+              [
+                {:type, _, :product,
+                 [{:ann_type, _, [{:var, _, :param}, {:type, _, :atom, []}]}]},
+                {:type, _, :atom, []}
+              ]} = fetch_typespec(TestMock, :foo, 1)
+    end
   end
 end
