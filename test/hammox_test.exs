@@ -15,7 +15,7 @@ defmodule HammoxTest do
 
   test "return value check fail" do
     TestMock |> expect(:foo, fn :param -> "baz" end)
-    assert_raise(RuntimeError, fn -> TestMock.foo(:param) end)
+    assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo(:param) end)
   end
 
   describe "fetch_typespec/3" do

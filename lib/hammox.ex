@@ -1,4 +1,15 @@
 defmodule Hammox do
+  defmodule TypeMatchError do
+    defexception [:message]
+
+    @impl true
+    def exception({:error, {value, type}}) do
+      %__MODULE__{
+        message: "Type match error: value #{inspect(value)} does not match type #{inspect(type)}"
+      }
+    end
+  end
+
   def allow(mock, owner_pid, allowed_via) do
     Mox.allow(mock, owner_pid, allowed_via)
   end
@@ -81,14 +92,18 @@ defmodule Hammox do
     verify_value!(return_value, return_type)
   end
 
-  def verify_value!(value, {:type, _, :atom, []}) do
-    if !is_atom(value) do
-      raise "Expected #{inspect(value)} to be an atom!"
+  def verify_value!(value, typespec) do
+    case match_value(value, typespec) do
+      :ok -> :ok
+      {:error, _} = error -> raise TypeMatchError, error
     end
+  end
+
+  def match_value(value, {:type, _, :atom, []}) when is_atom(value) do
     :ok
   end
 
-  def verify_value!(_value, type) do
-    raise "Unsupported type in typespec: #{inspect(type)}"
+  def match_value(value, {:type, _, :atom, []}) do
+    {:error, {value, :atom}}
   end
 end
