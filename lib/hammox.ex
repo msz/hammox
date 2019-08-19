@@ -20,10 +20,13 @@ defmodule Hammox do
 
   def expect(mock, name, n \\ 1, code) do
     arity = :erlang.fun_info(code)[:arity]
-    hammox_code = case fetch_typespec(mock, name, arity) do
-      [] -> code
-      typespec -> decorate(code, typespec, arity)
-    end
+
+    hammox_code =
+      case fetch_typespec(mock, name, arity) do
+        [] -> code
+        typespec -> decorate(code, typespec, arity)
+      end
+
     Mox.expect(mock, name, n, hammox_code)
   end
 
@@ -86,10 +89,10 @@ defmodule Hammox do
       |> Enum.concat()
       |> Enum.filter(fn callback -> match?({{^function_name, ^arity}, _}, callback) end)
 
-      case fetch_results do
-        [{{^function_name, ^arity}, [typespec]}] -> typespec
-        [] -> []
-      end
+    case fetch_results do
+      [{{^function_name, ^arity}, [typespec]}] -> typespec
+      [] -> []
+    end
   end
 
   def verify_return_value!(return_value, typespec) do
@@ -98,25 +101,25 @@ defmodule Hammox do
   end
 
   def verify_value!(value, typespec) do
-    case match_value(value, typespec) do
+    case match_type(value, typespec) do
       :ok -> :ok
       {:error, _} = error -> raise TypeMatchError, error
     end
   end
 
-  def match_value(value, {:type, _, :atom, []}) when is_atom(value) do
+  def match_type(value, {:type, _, :atom, []}) when is_atom(value) do
     :ok
   end
 
-  def match_value(value, {:type, _, :atom, []}) do
+  def match_type(value, {:type, _, :atom, []}) do
     {:error, {value, :atom}}
   end
 
-  def match_value(value, {:type, _, :number, []}) when is_number(value) do
+  def match_type(value, {:type, _, :number, []}) when is_number(value) do
     :ok
   end
 
-  def match_value(value, {:type, _, :number, []}) do
+  def match_type(value, {:type, _, :number, []}) do
     {:error, {value, :number}}
   end
 end

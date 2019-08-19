@@ -1,3 +1,4 @@
 defmodule Hammox.Test.Behaviour do
-  @callback foo(param :: atom()) :: atom()
+  @callback foo_atom() :: atom()
+  @callback foo_number() :: number()
 end
