@@ -8,14 +8,28 @@ defmodule HammoxTest do
     :ok
   end
 
-  test "return value check pass" do
-    TestMock |> expect(:foo_atom, fn -> :baz end)
-    assert :baz == TestMock.foo_atom()
+  describe "atom" do
+    test "pass" do
+      TestMock |> expect(:foo_atom, fn -> :baz end)
+      assert :baz == TestMock.foo_atom()
+    end
+
+    test "fail" do
+      TestMock |> expect(:foo_atom, fn -> "baz" end)
+      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_atom() end)
+    end
   end
 
-  test "return value check fail" do
-    TestMock |> expect(:foo_atom, fn -> "baz" end)
-    assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_atom() end)
+  describe "number" do
+    test "pass" do
+      TestMock |> expect(:foo_number, fn -> 1 end)
+      assert 1 == TestMock.foo_number()
+    end
+
+    test "fail" do
+      TestMock |> expect(:foo_number, fn -> "baz" end)
+      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_number() end)
+    end
   end
 
   describe "fetch_typespec/3" do
