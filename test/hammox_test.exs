@@ -10,25 +10,21 @@ defmodule HammoxTest do
 
   describe "atom" do
     test "pass" do
-      TestMock |> expect(:foo_atom, fn -> :baz end)
-      assert :baz == TestMock.foo_atom()
+      assert_pass(:foo_atom, :baz)
     end
 
     test "fail" do
-      TestMock |> expect(:foo_atom, fn -> "baz" end)
-      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_atom() end)
+      assert_fail(:foo_atom, "baz")
     end
   end
 
   describe "number" do
     test "pass" do
-      TestMock |> expect(:foo_number, fn -> 1 end)
-      assert 1 == TestMock.foo_number()
+      assert_pass(:foo_number, 1)
     end
 
     test "fail" do
-      TestMock |> expect(:foo_number, fn -> "baz" end)
-      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_number() end)
+      assert_fail(:foo_number, "baz")
     end
   end
 
@@ -40,5 +36,15 @@ defmodule HammoxTest do
                 {:type, _, :atom, []}
               ]} = fetch_typespec(TestMock, :foo_atom, 0)
     end
+  end
+
+  defp assert_pass(function_name, value) do
+    TestMock |> expect(function_name, fn -> value end)
+    assert value == apply(TestMock, function_name, [])
+  end
+
+  defp assert_fail(function_name, value) do
+    TestMock |> expect(function_name, fn -> value end)
+    assert_raise(Hammox.TypeMatchError, fn -> apply(TestMock, function_name, []) end)
   end
 end
