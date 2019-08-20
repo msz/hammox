@@ -28,6 +28,20 @@ defmodule HammoxTest do
     end
   end
 
+  describe "list(type)" do
+    test "empty pass" do
+      assert_pass(:foo_list_type, [])
+    end
+
+    test "pass" do
+      assert_pass(:foo_list_type, [:a, :b])
+    end
+
+    test "fail" do
+      assert_fail(:foo_list_type, [:a, 1, :b])
+    end
+  end
+
   describe "fetch_typespec/3" do
     test "gets callbacks for TestMock" do
       assert {:type, _, :fun,

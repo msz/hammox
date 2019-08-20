@@ -3,10 +3,36 @@ defmodule Hammox do
     defexception [:message]
 
     @impl true
-    def exception({:error, {value, type}}) do
+    def exception({:error, reason}) do
       %__MODULE__{
-        message: "Type match error: value #{inspect(value)} does not match type #{inspect(type)}"
+        message: "\n" <> message_string(reason)
       }
+    end
+
+    defp human_reason({:list_elem_type_mismatch, index, nested_reason}) do
+      {"Element #{index} does not match typespec.", human_reason(nested_reason)}
+    end
+
+    defp human_reason({value, type}) do
+      "Value #{inspect(value)} does not match type #{inspect(type)}."
+    end
+
+    defp message_string(reason) do
+      message_string(human_reason(reason), 0)
+    end
+
+    defp message_string({reason, nested_reason}, level) when is_binary(reason) do
+      leftpadding(level) <> reason <> "\n" <> message_string(nested_reason, level + 1)
+    end
+
+    defp message_string(reason, level) when is_binary(reason) do
+      leftpadding(level) <> reason
+    end
+
+    defp leftpadding(level) do
+      for(_ <- 0..level, do: "  ")
+      |> Enum.drop(1)
+      |> Enum.join()
     end
   end
 
@@ -117,6 +143,23 @@ defmodule Hammox do
 
   def match_type(value, {:type, _, :number, []}) when is_number(value) do
     :ok
+  end
+
+  def match_type(value, {:type, _, :list, [elem_typespec]}) when is_list(value) do
+    errors =
+      value
+      |> Enum.map(fn elem -> match_type(elem, elem_typespec) end)
+      |> Enum.zip(0..length(value))
+      |> Enum.reject(fn {result, _index} -> :ok == result end)
+
+    case errors do
+      [] -> :ok
+      [{{:error, reason}, index} | _rest] -> {:error, {:list_elem_type_mismatch, index, reason}}
+    end
+  end
+
+  def match_type(value, {:type, _, :list, _}) do
+    {:error, {value, :list}}
   end
 
   def match_type(value, {:type, _, :number, []}) do
