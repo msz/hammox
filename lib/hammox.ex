@@ -176,6 +176,14 @@ defmodule Hammox do
     end
   end
 
+  def match_type(value, {:atom, _, atom}) when value == atom do
+    :ok
+  end
+
+  def match_type(value, {:atom, _, _atom} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :atom, []}) when is_atom(value) do
     :ok
   end

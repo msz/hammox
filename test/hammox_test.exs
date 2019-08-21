@@ -8,7 +8,17 @@ defmodule HammoxTest do
     :ok
   end
 
-  describe "atom" do
+  describe "atom literal" do
+    test "pass" do
+      assert_pass(:foo_atom_literal, :ok)
+    end
+
+    test "fail" do
+      assert_fail(:foo_atom_literal, :other)
+    end
+  end
+
+  describe "atom()" do
     test "pass" do
       assert_pass(:foo_atom, :baz)
     end
@@ -18,7 +28,7 @@ defmodule HammoxTest do
     end
   end
 
-  describe "number" do
+  describe "number()" do
     test "pass" do
       assert_pass(:foo_number, 1)
     end
