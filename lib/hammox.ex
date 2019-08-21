@@ -9,6 +9,12 @@ defmodule Hammox do
       }
     end
 
+    defp human_reason({:arg_type_mismatch, name, index, value, type, reason}) do
+      {"#{index}th argument value #{inspect(value)} does not match #{index}th parameter#{
+         if name, do: " \"" <> to_string(name) <> "\""
+       }'s type #{type_to_string(type)}.", human_reason(reason)}
+    end
+
     defp human_reason({:return_type_mismatch, value, type, reason}) do
       {"Returned value #{inspect(value)} does not match type #{type_to_string(type)}.",
        human_reason(reason)}
@@ -116,6 +122,12 @@ defmodule Hammox do
   def decorate(code, typespec, 1) do
     fn arg1 ->
       decorated_body(code, typespec, [arg1])
+    end
+  end
+
+  def decorate(code, typespec, 2) do
+    fn arg1, arg2 ->
+      decorated_body(code, typespec, [arg1, arg2])
     end
   end
 
