@@ -10,14 +10,16 @@ defmodule Hammox do
     end
 
     defp human_reason({:return_type_mismatch, value, type, reason}) do
-      {"Returned value #{inspect(value)} does not match type #{inspect(type)}.", human_reason(reason)}
+      {"Returned value #{inspect(value)} does not match type #{inspect(type)}.",
+       human_reason(reason)}
     end
 
-    defp human_reason({:list_elem_type_mismatch, index, nested_reason}) do
-      {"Element #{index} does not match typespec.", human_reason(nested_reason)}
+    defp human_reason({:list_elem_type_mismatch, index, elem, elem_type, reason}) do
+      {"Element #{inspect(elem)} (index: #{index}) does not match type #{inspect(elem_type)}.",
+       human_reason(reason)}
     end
 
-    defp human_reason({value, type}) do
+    defp human_reason({:type_mismatch, value, type}) do
       "Value #{inspect(value)} does not match type #{inspect(type)}."
     end
 
@@ -165,32 +167,44 @@ defmodule Hammox do
     :ok
   end
 
-  def match_type(value, {:type, _, :atom, []}) do
-    {:error, {value, :atom}}
+  def match_type(value, {:type, _, :atom, []} = type) do
+    type_mismatch(value, type)
   end
 
   def match_type(value, {:type, _, :number, []}) when is_number(value) do
     :ok
   end
 
+  def match_type(value, {:type, _, :number, _} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :list, [elem_typespec]}) when is_list(value) do
     errors =
       value
-      |> Enum.map(fn elem -> match_type(elem, elem_typespec) end)
       |> Enum.zip(0..length(value))
-      |> Enum.reject(fn {result, _index} -> :ok == result end)
+      |> Enum.map(fn {elem, index} ->
+        case match_type(elem, elem_typespec) do
+          {:error, reason} ->
+            {:error, {:list_elem_type_mismatch, index, elem, elem_typespec, reason}}
+
+          :ok ->
+            :ok
+        end
+      end)
+      |> Enum.reject(fn result -> result == :ok end)
 
     case errors do
       [] -> :ok
-      [{{:error, reason}, index} | _rest] -> {:error, {:list_elem_type_mismatch, index, reason}}
+      [error | _rest] -> error
     end
   end
 
-  def match_type(value, {:type, _, :list, _}) do
-    {:error, {value, :list}}
+  def match_type(value, {:type, _, :list, _} = type) do
+    type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :number, []}) do
-    {:error, {value, :number}}
+  defp type_mismatch(value, type) do
+    {:error, {:type_mismatch, value, type}}
   end
 end
