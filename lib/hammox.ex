@@ -74,7 +74,7 @@ defmodule Hammox do
 
     hammox_code =
       case fetch_typespec(mock, name, arity) do
-        [] -> code
+        nil -> code
         typespec -> decorate(code, typespec, arity)
       end
 
@@ -175,7 +175,7 @@ defmodule Hammox do
 
     case fetch_results do
       [{{^function_name, ^arity}, [typespec]}] -> typespec
-      [] -> []
+      [] -> nil
     end
   end
 
