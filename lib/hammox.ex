@@ -10,17 +10,18 @@ defmodule Hammox do
     end
 
     defp human_reason({:return_type_mismatch, value, type, reason}) do
-      {"Returned value #{inspect(value)} does not match type #{inspect(type)}.",
+      {"Returned value #{inspect(value)} does not match type #{type_to_string(type)}.",
        human_reason(reason)}
     end
 
     defp human_reason({:list_elem_type_mismatch, index, elem, elem_type, reason}) do
-      {"Element #{inspect(elem)} (index: #{index}) does not match type #{inspect(elem_type)}.",
-       human_reason(reason)}
+      {"Element #{inspect(elem)} at index #{index} does not match type #{
+         type_to_string(elem_type)
+       }.", human_reason(reason)}
     end
 
     defp human_reason({:type_mismatch, value, type}) do
-      "Value #{inspect(value)} does not match type #{inspect(type)}."
+      "Value #{inspect(value)} does not match type #{type_to_string(type)}."
     end
 
     defp message_string(reason) do
@@ -39,6 +40,18 @@ defmodule Hammox do
       for(_ <- 0..level, do: "  ")
       |> Enum.drop(1)
       |> Enum.join()
+    end
+
+    defp type_to_string(type) do
+      # We really want to access Code.Typespec.typespec_to_quoted/1 here but it's
+      # private... this hack needs to suffice.
+      [_, type_string] =
+        {:foo, type, []}
+        |> Code.Typespec.type_to_quoted()
+        |> Macro.to_string()
+        |> String.split(" :: ")
+
+      type_string
     end
   end
 
