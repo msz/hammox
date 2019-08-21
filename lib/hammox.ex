@@ -9,6 +9,10 @@ defmodule Hammox do
       }
     end
 
+    defp human_reason({:return_type_mismatch, value, type, reason}) do
+      {"Returned value #{inspect(value)} does not match type #{inspect(type)}.", human_reason(reason)}
+    end
+
     defp human_reason({:list_elem_type_mismatch, index, nested_reason}) do
       {"Element #{index} does not match typespec.", human_reason(nested_reason)}
     end
@@ -90,18 +94,45 @@ defmodule Hammox do
 
   def decorate(code, typespec, 0) do
     fn ->
-      ret = code.()
-      verify_return_value!(ret, typespec)
-      ret
+      decorated_body(code, typespec, [])
     end
   end
 
   def decorate(code, typespec, 1) do
     fn arg1 ->
-      ret = code.(arg1)
-      verify_return_value!(ret, typespec)
-      ret
+      decorated_body(code, typespec, [arg1])
     end
+  end
+
+  defp decorated_body(code, typespec, args) do
+    args
+    |> Enum.zip(0..(length(args) - 1))
+    |> Enum.each(fn {arg, index} ->
+      {arg_name, arg_type} = arg_typespec(typespec, index)
+
+      case match_type(arg, arg_type) do
+        {:error, reason} ->
+          raise TypeMatchError,
+                {:error, {:arg_type_mismatch, arg_name, index, arg, arg_type, reason}}
+
+        :ok ->
+          nil
+      end
+    end)
+
+    return_value = apply(code, args)
+    {:type, _, :fun, [_, return_type]} = typespec
+
+    case match_type(return_value, return_type) do
+      {:error, reason} ->
+        raise TypeMatchError,
+              {:error, {:return_type_mismatch, return_value, return_type, reason}}
+
+      :ok ->
+        nil
+    end
+
+    return_value
   end
 
   def fetch_typespec(mock_name, function_name, arity)
@@ -121,15 +152,12 @@ defmodule Hammox do
     end
   end
 
-  def verify_return_value!(return_value, typespec) do
-    {:type, _, :fun, [_, return_type]} = typespec
-    verify_value!(return_value, return_type)
-  end
+  def arg_typespec(function_typespec, arg_index) do
+    {:type, _, :fun, [{:type, _, :product, arg_typespecs}, _]} = function_typespec
 
-  def verify_value!(value, typespec) do
-    case match_type(value, typespec) do
-      :ok -> :ok
-      {:error, _} = error -> raise TypeMatchError, error
+    case Enum.at(arg_typespecs, arg_index) do
+      {:ann_type, _, [{:var, _, arg_name}, arg_type]} -> {arg_name, arg_type}
+      {:type, _, _, _} = arg_type -> {nil, arg_type}
     end
   end
 
