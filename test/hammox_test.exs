@@ -3,10 +3,6 @@ defmodule HammoxTest do
 
   import Hammox
 
-  defmodule TestStruct do
-    defstruct [:foo]
-  end
-
   setup_all do
     defmock(TestMock, for: Hammox.Test.Behaviour)
     :ok
@@ -91,7 +87,7 @@ defmodule HammoxTest do
 
   describe "struct()" do
     test "pass" do
-      assert_pass(:foo_struct, %TestStruct{foo: :bar})
+      assert_pass(:foo_struct, %Hammox.Test.Struct{foo: :bar})
     end
 
     test "fail" do
