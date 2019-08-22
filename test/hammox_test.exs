@@ -103,7 +103,7 @@ defmodule HammoxTest do
     end
 
     test "named and unnamed arg pass" do
-      TestMock |> expect(:foo_named_and_unnamed_arg, fn _arg1, _arg2-> :ok end)
+      TestMock |> expect(:foo_named_and_unnamed_arg, fn _arg1, _arg2 -> :ok end)
       assert :ok == TestMock.foo_named_and_unnamed_arg(:bar, 1)
     end
 
