@@ -52,6 +52,20 @@ defmodule HammoxTest do
     end
   end
 
+  describe "union" do
+    test "pass first type" do
+      assert_pass(:foo_union, :a)
+    end
+
+    test "pass second type" do
+      assert_pass(:foo_union, :b)
+    end
+
+    test "fail" do
+      assert_fail(:foo_union, :c)
+    end
+  end
+
   describe "arg type checking" do
     test "no args pass" do
       TestMock |> expect(:foo_no_arg, fn -> :ok end)

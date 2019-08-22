@@ -9,4 +9,6 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_unnamed_arg(atom()) :: :ok
   @callback foo_named_arg(arg1 :: atom()) :: :ok
   @callback foo_named_and_unnamed_arg(atom(), arg2 :: number()) :: :ok
+
+  @callback foo_union() :: :a | :b
 end

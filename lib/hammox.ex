@@ -188,6 +188,14 @@ defmodule Hammox do
     end
   end
 
+  def match_type(value, {:type, _, :union, union_types} = union) when is_list(union_types) do
+    is_ok = union_types
+    |> Enum.map(fn type -> match_type(value, type) end)
+    |> Enum.any?(fn result -> result == :ok end)
+
+    if is_ok, do: :ok, else: type_mismatch(value, union)
+  end
+
   def match_type(value, {:atom, _, atom}) when value == atom do
     :ok
   end
