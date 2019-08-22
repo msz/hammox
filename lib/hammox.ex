@@ -21,8 +21,28 @@ defmodule Hammox do
     end
 
     defp human_reason({:list_elem_type_mismatch, index, elem, elem_type, reason}) do
-      {"Element #{inspect(elem)} at index #{index} does not match type #{
+      {"Element #{inspect(elem)} at index #{index} does not match element type #{
          type_to_string(elem_type)
+       }.", human_reason(reason)}
+    end
+
+    defp human_reason({:empty_list_type_mismatch, type}) do
+      "Got an empty list but expected #{type_to_string(type)}."
+    end
+
+    defp human_reason({:proper_list_type_mismatch, type}) do
+      "Got a proper list but expected #{type_to_string(type)}."
+    end
+
+    defp human_reason({:improper_list_type_mismatch, type}) do
+      "Got an improper list but expected #{type_to_string(type)}."
+    end
+
+    defp human_reason(
+           {:improper_list_terminator_type_mismatch, terminator, terminator_type, reason}
+         ) do
+      {"Improper list terminator #{inspect(terminator)} does not match terminator type #{
+         type_to_string(terminator_type)
        }.", human_reason(reason)}
     end
 
@@ -197,11 +217,184 @@ defmodule Hammox do
     if is_ok, do: :ok, else: type_mismatch(value, union)
   end
 
+  def match_type(_value, {:type, _, :any, []}) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :none, []} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :atom, []}) when is_atom(value) do
     :ok
   end
 
   def match_type(value, {:type, _, :atom, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :map, :any}) when is_map(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :map, :any} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :pid, []}) when is_pid(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :pid, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :port, []}) when is_port(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :port, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :reference, []}) when is_reference(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :reference, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:remote_type, 0, [{:atom, 0, :elixir}, {:atom, 0, :struct}, []]} = type) do
+    if Map.has_key?(value, :__struct__), do: :ok, else: type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :tuple, :any}) when is_tuple(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :tuple, :any} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :float, []}) when is_float(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :float, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :integer, []}) when is_integer(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :integer, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :neg_integer, []}) when is_integer(value) and value < 0 do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :neg_integer, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :non_neg_integer, []}) when is_integer(value) and value >= 0 do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :non_neg_integer, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :pos_integer, []}) when is_integer(value) and value > 0 do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :pos_integer, []} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :list, [elem_typespec]}) when is_list(value) do
+    match_type(
+      value,
+      {:type, 0, :union, [{:type, 0, nil, []}, {:type, 0, :nonempty_list, [elem_typespec]}]}
+    )
+  end
+
+  def match_type(value, {:type, _, :list, _} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type([], {:type, _, :nonempty_list, [_]} = type) do
+    {:error, {:empty_list_type_mismatch, type}}
+  end
+
+  def match_type([_a | b], {:type, _, :nonempty_list, [_]} = type) when not is_list(b) do
+    {:error, {:improper_list_type_mismatch, type}}
+  end
+
+  def match_type(value, {:type, _, :nonempty_list, [elem_typespec]}) when is_list(value) do
+    error =
+      value
+      |> Enum.zip(0..length(value))
+      |> Enum.find_value(fn {elem, index} ->
+        case match_type(elem, elem_typespec) do
+          {:error, reason} ->
+            {:error, {:list_elem_type_mismatch, index, elem, elem_typespec, reason}}
+
+          :ok ->
+            nil
+        end
+      end)
+
+    error || :ok
+  end
+
+  def match_type(value, {:type, _, :maybe_improper_list, [type1, type2]}) do
+    match_type(
+      value,
+      {:type, 0, :union,
+       [{:type, 0, :list, [type1]}, {:type, 0, :nonempty_improper_list, [type1, type2]}]}
+    )
+  end
+
+  def match_type([], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
+    {:error, {:empty_list_type_mismatch, type}}
+  end
+
+  def match_type([_ | []], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
+    {:error, {:proper_list_type_mismatch, type}}
+  end
+
+  def match_type(list, {:type, _, :nonempty_improper_list, [_type1, _type2]} = type)
+      when is_list(list) do
+    match_improper_list_type(list, type, 0)
+  end
+
+  def match_type(value, {:type, _, :nonempty_maybe_improper_list, [type1, type2]}) do
+    match_type(
+      value,
+      {:type, 0, :union,
+       [{:type, 0, :nonempty_list, [type1]}, {:type, 0, :nonempty_improper_list, [type1, type2]}]}
+    )
+  end
+
+  def match_type(value, {:atom, _, atom}) when value == atom do
+    :ok
+  end
+
+  def match_type(value, {:atom, _, _atom} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, nil, []}) when value == [] do
+    :ok
+  end
+
+  def match_type(value, {:type, _, nil, []} = type) do
     type_mismatch(value, type)
   end
 
@@ -213,37 +406,46 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :list, [elem_typespec]}) when is_list(value) do
-    errors =
-      value
-      |> Enum.zip(0..length(value))
-      |> Enum.map(fn {elem, index} ->
-        case match_type(elem, elem_typespec) do
-          {:error, reason} ->
-            {:error, {:list_elem_type_mismatch, index, elem, elem_typespec, reason}}
+  defp match_improper_list_type(
+         [elem | rest],
+         {:type, _, :nonempty_improper_list, [type1, _type2]} = type,
+         index
+       )
+       when is_list(rest) do
+    elem_error =
+      case match_type(elem, type1) do
+        :ok -> nil
+        {:error, reason} -> {:error, {:list_elem_type_mismatch, index, elem, type1, reason}}
+      end
 
-          :ok ->
-            :ok
-        end
-      end)
-      |> Enum.reject(fn result -> result == :ok end)
-
-    case errors do
-      [] -> :ok
-      [error | _rest] -> error
+    if elem_error do
+      elem_error
+    else
+      match_improper_list_type(rest, type, index + 1)
     end
   end
 
-  def match_type(value, {:type, _, :list, _} = type) do
-    type_mismatch(value, type)
-  end
+  defp match_improper_list_type(
+         [elem | terminator],
+         {:type, _, :nonempty_improper_list, [type1, type2]},
+         index
+       ) do
+    elem_error =
+      case match_type(elem, type1) do
+        :ok -> nil
+        {:error, reason} -> {:error, {:list_elem_type_mismatch, index, elem, type1, reason}}
+      end
 
-  def match_type(value, {:atom, _, atom}) when value == atom do
-    :ok
-  end
+    terminator_error =
+      case match_type(terminator, type2) do
+        :ok ->
+          nil
 
-  def match_type(value, {:atom, _, _atom} = type) do
-    type_mismatch(value, type)
+        {:error, reason} ->
+          {:error, {:improper_list_terminator_type_mismatch, terminator, type2, reason}}
+      end
+
+    elem_error || terminator_error || :ok
   end
 
   defp type_mismatch(value, type) do
