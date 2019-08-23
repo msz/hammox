@@ -390,6 +390,20 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
+  def match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, 0}]})
+      when is_bitstring(value) and bit_size(value) == head_size do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, unit}]})
+      when is_bitstring(value) and rem(bit_size(value) - head_size, unit) == 0 do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :binary, [{:integer, _, _head_size}, {:integer, _, _unit}]} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, nil, []}) when value == [] do
     :ok
   end

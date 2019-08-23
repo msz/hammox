@@ -271,6 +271,46 @@ defmodule HammoxTest do
     end
   end
 
+  describe "empty bitstring literal" do
+    test "pass" do
+      assert_pass(:foo_empty_bitstring_literal, <<>>)
+    end
+
+    test "fail" do
+      assert_fail(:foo_empty_bitstring_literal, <<1>>)
+    end
+  end
+
+  describe "bitstring with size literal" do
+    test "pass" do
+      assert_pass(:foo_bitstring_size_literal, <<1::size(3)>>)
+    end
+
+    test "fail" do
+      assert_fail(:foo_bitstring_size_literal, <<1::size(4)>>)
+    end
+  end
+
+  describe "bitstring with unit literal" do
+    test "pass" do
+      assert_pass(:foo_bitstring_unit_literal, <<1::9>>)
+    end
+
+    test "fail" do
+      assert_fail(:foo_bitstring_unit_literal, <<1::7>>)
+    end
+  end
+
+  describe "bitstring with size and unit literal" do
+    test "pass" do
+      assert_pass(:foo_bitstring_size_unit_literal, <<1::8>>)
+    end
+
+    test "fail" do
+      assert_fail(:foo_bitstring_size_unit_literal, <<1::7>>)
+    end
+  end
+
   describe "empty list literal" do
     test "pass" do
       assert_pass(:foo_empty_list_literal, [])
