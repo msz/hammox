@@ -435,7 +435,7 @@ defmodule HammoxTest do
     end
 
     test "wrong type fail" do
-      assert_fail(:foo_keyword_list_literal, key1: "bar")
+      assert_pass(:foo_keyword_list_literal, key1: "bar")
     end
   end
 

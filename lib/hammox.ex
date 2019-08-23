@@ -336,10 +336,14 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
+  def match_type([], {:type, _, :list, _}) do
+    :ok
+  end
+
   def match_type(value, {:type, _, :list, [elem_typespec]}) when is_list(value) do
     match_type(
       value,
-      {:type, 0, :union, [{:type, 0, nil, []}, {:type, 0, :nonempty_list, [elem_typespec]}]}
+      {:type, 0, :nonempty_list, [elem_typespec]}
     )
   end
 
