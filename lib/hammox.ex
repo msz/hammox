@@ -46,6 +46,10 @@ defmodule Hammox do
        }.", human_reason(reason)}
     end
 
+    defp human_reason({:function_arity_type_mismatch, expected, actual}) do
+      "Expected function to have arity #{expected} but got #{actual}."
+    end
+
     defp human_reason({:type_mismatch, value, type}) do
       "Value #{inspect(value)} does not match type #{type_to_string(type)}."
     end
@@ -400,7 +404,31 @@ defmodule Hammox do
     :ok
   end
 
-  def match_type(value, {:type, _, :binary, [{:integer, _, _head_size}, {:integer, _, _unit}]} = type) do
+  def match_type(
+        value,
+        {:type, _, :binary, [{:integer, _, _head_size}, {:integer, _, _unit}]} = type
+      ) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :fun, [{:type, _, :any}, _return_type]})
+      when is_function(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :fun, [{:type, _, :product, param_types}, _return_type]})
+      when is_function(value) do
+    expected = length(param_types)
+    actual = :erlang.fun_info(value)[:arity]
+
+    if expected == actual do
+      :ok
+    else
+      {:error, {:function_arity_type_mismatch, expected, actual}}
+    end
+  end
+
+  def match_type(value, {:type, _, :fun, _} = type) do
     type_mismatch(value, type)
   end
 

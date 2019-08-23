@@ -311,6 +311,40 @@ defmodule HammoxTest do
     end
   end
 
+  describe "nullary function literal" do
+    test "pass" do
+      assert_pass(:foo_nullary_function_literal, fn -> nil end)
+    end
+
+    test "fail" do
+      assert_fail(:foo_nullary_function_literal, fn _ -> nil end)
+    end
+  end
+
+  describe "binary function literal" do
+    test "pass" do
+      assert_pass(:foo_binary_function_literal, fn _, _ -> nil end)
+    end
+
+    test "fail" do
+      assert_fail(:foo_binary_function_literal, fn _, _, _ -> nil end)
+    end
+  end
+
+  describe "any arity function literal" do
+    test "pass zero" do
+      assert_pass(:foo_any_arity_function_literal, fn -> nil end)
+    end
+
+    test "pass two" do
+      assert_pass(:foo_any_arity_function_literal, fn _, _ -> nil end)
+    end
+
+    test "fail non function" do
+      assert_fail(:foo_any_arity_function_literal, :fun)
+    end
+  end
+
   describe "empty list literal" do
     test "pass" do
       assert_pass(:foo_empty_list_literal, [])
