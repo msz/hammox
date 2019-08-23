@@ -20,7 +20,7 @@ defmodule Hammox do
        human_reason(reason)}
     end
 
-    defp human_reason({:list_elem_type_mismatch, index, elem, elem_type, reason}) do
+    defp human_reason({:elem_type_mismatch, index, elem, elem_type, reason}) do
       {"Element #{inspect(elem)} at index #{index} does not match element type #{
          type_to_string(elem_type)
        }.", human_reason(reason)}
@@ -281,6 +281,21 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
+  def match_type(value, {:type, _, :tuple, tuple_types})
+      when is_tuple(value) and tuple_size(value) == length(tuple_types) do
+    error =
+      [Tuple.to_list(value), tuple_types, 0..(tuple_size(value) - 1)]
+      |> Enum.zip()
+      |> Enum.find_value(fn {elem, elem_type, index} ->
+        case match_type(elem, elem_type) do
+          :ok -> nil
+          {:error, reason} -> {:error, {:elem_type_mismatch, index, elem, elem_type, reason}}
+        end
+      end)
+
+    error || :ok
+  end
+
   def match_type(value, {:type, _, :float, []}) when is_float(value) do
     :ok
   end
@@ -332,6 +347,14 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
+  def match_type([_ | _], {:type, _, :nonempty_list, []}) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :nonempty_list, []}) do
+    match_type(value, {:type, 0, :nonempty_list, [{:type, 0, :any}]})
+  end
+
   def match_type([], {:type, _, :nonempty_list, [_]} = type) do
     {:error, {:empty_list_type_mismatch, type}}
   end
@@ -347,7 +370,7 @@ defmodule Hammox do
       |> Enum.find_value(fn {elem, index} ->
         case match_type(elem, elem_typespec) do
           {:error, reason} ->
-            {:error, {:list_elem_type_mismatch, index, elem, elem_typespec, reason}}
+            {:error, {:elem_type_mismatch, index, elem, elem_typespec, reason}}
 
           :ok ->
             nil
@@ -440,7 +463,8 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]}) when value in low..high do
+  def match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]})
+      when value in low..high do
     :ok
   end
 
@@ -473,7 +497,7 @@ defmodule Hammox do
     elem_error =
       case match_type(elem, type1) do
         :ok -> nil
-        {:error, reason} -> {:error, {:list_elem_type_mismatch, index, elem, type1, reason}}
+        {:error, reason} -> {:error, {:elem_type_mismatch, index, elem, type1, reason}}
       end
 
     if elem_error do
@@ -491,7 +515,7 @@ defmodule Hammox do
     elem_error =
       case match_type(elem, type1) do
         :ok -> nil
-        {:error, reason} -> {:error, {:list_elem_type_mismatch, index, elem, type1, reason}}
+        {:error, reason} -> {:error, {:elem_type_mismatch, index, elem, type1, reason}}
       end
 
     terminator_error =

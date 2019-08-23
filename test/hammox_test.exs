@@ -365,6 +365,20 @@ defmodule HammoxTest do
     end
   end
 
+  describe "list literal" do
+    test "empty pass" do
+      assert_pass(:foo_list_literal, [])
+    end
+
+    test "pass" do
+      assert_pass(:foo_list_literal, [:a, :b])
+    end
+
+    test "fail" do
+      assert_fail(:foo_list_literal, [:a, 1, :b])
+    end
+  end
+
   describe "empty list literal" do
     test "pass" do
       assert_pass(:foo_empty_list_literal, [])
@@ -372,6 +386,56 @@ defmodule HammoxTest do
 
     test "fail" do
       assert_fail(:foo_empty_list_literal, [:a])
+    end
+  end
+
+  describe "nonempty any list literal" do
+    test "empty fail" do
+      assert_fail(:foo_nonempty_any_list_literal, [])
+    end
+
+    test "pass" do
+      assert_pass(:foo_nonempty_any_list_literal, [:a, :b])
+    end
+
+    test "fail" do
+      assert_pass(:foo_nonempty_any_list_literal, [:a, 1, :b])
+    end
+  end
+
+  describe "nonempty list literal" do
+    test "empty fail" do
+      assert_fail(:foo_nonempty_list_literal, [])
+    end
+
+    test "pass" do
+      assert_pass(:foo_nonempty_list_literal, [:a, :b])
+    end
+
+    test "fail" do
+      assert_fail(:foo_nonempty_list_literal, [:a, 1, :b])
+    end
+  end
+
+  describe "keyword list literal" do
+    test "empty pass" do
+      assert_pass(:foo_keyword_list_literal, [])
+    end
+
+    test "missing key pass" do
+      assert_pass(:foo_keyword_list_literal, key1: :bar)
+    end
+
+    test "different order pass" do
+      assert_pass(:foo_keyword_list_literal, key2: 2, key1: :bar)
+    end
+
+    test "unknown key fail" do
+      assert_fail(:foo_keyword_list_literal, key3: "bar")
+    end
+
+    test "wrong type fail" do
+      assert_fail(:foo_keyword_list_literal, key1: "bar")
     end
   end
 

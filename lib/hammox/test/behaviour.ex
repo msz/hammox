@@ -33,7 +33,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_empty_list_literal() :: []
   @callback foo_nonempty_any_list_literal() :: [...]
   @callback foo_nonempty_list_literal() :: [atom(), ...]
-  @callback foo_keyword_list_literal() :: [key: atom()]
+  @callback foo_keyword_list_literal() :: [key1: atom(), key2: number()]
   @callback foo_empty_map_literal() :: %{}
   @callback foo_map_required_atom_key_literal() :: %{key: atom()}
   @callback foo_map_required_key_literal() :: %{required(atom()) => atom()}
