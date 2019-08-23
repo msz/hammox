@@ -432,6 +432,22 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
+  def match_type(value, {:integer, _, integer}) when value === integer do
+    :ok
+  end
+
+  def match_type(value, {:integer, _, _integer} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]}) when value in low..high do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :range, _range} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, nil, []}) when value == [] do
     :ok
   end

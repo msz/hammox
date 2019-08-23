@@ -345,6 +345,26 @@ defmodule HammoxTest do
     end
   end
 
+  describe "integer literal" do
+    test "pass" do
+      assert_pass(:foo_integer_literal, 1)
+    end
+
+    test "fail" do
+      assert_fail(:foo_integer_literal, 2)
+    end
+  end
+
+  describe "integer range literal" do
+    test "pass" do
+      assert_pass(:foo_integer_range_literal, 5)
+    end
+
+    test "fail" do
+      assert_fail(:foo_integer_range_literal, 11)
+    end
+  end
+
   describe "empty list literal" do
     test "pass" do
       assert_pass(:foo_empty_list_literal, [])
