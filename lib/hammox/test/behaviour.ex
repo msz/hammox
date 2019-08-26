@@ -47,6 +47,33 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_empty_tuple_literal() :: {}
   @callback foo_two_tuple_literal() :: {:ok, atom()}
 
+  @callback foo_term() :: term()
+  @callback foo_arity() :: arity()
+  @callback foo_as_boolean() :: as_boolean(:ok | nil)
+  @callback foo_binary() :: binary()
+  @callback foo_bitstring() :: bitstring()
+  @callback foo_boolean() :: boolean()
+  @callback foo_byte() :: byte()
+  @callback foo_char() :: char()
+  @callback foo_charlist() :: charlist()
+  @callback foo_nonempty_charlist() :: nonempty_charlist()
+  @callback foo_fun() :: fun()
+  @callback foo_function() :: function()
+  @callback foo_identifier() :: identifier()
+  @callback foo_iodata() :: iodata()
+  @callback foo_iolist() :: iolist()
+  @callback foo_keyword() :: keyword()
+  @callback foo_keyword_type :: keyword(number())
+  @callback foo_list_any() :: list()
+  @callback foo_nonempty_list_any() :: nonempty_list()
+  @callback foo_maybe_improper_list_any() :: maybe_improper_list()
+  @callback foo_nonempty_maybe_improper_list_any() :: nonempty_maybe_improper_list()
+  @callback foo_mfa :: mfa()
+  @callback foo_module :: module()
+  @callback foo_no_return :: no_return()
+  @callback foo_node :: atom()
+  @callback foo_timeout :: timeout()
+
   @callback foo_number() :: number()
 
   @callback foo_no_arg() :: :ok
