@@ -62,6 +62,15 @@ defmodule Hammox do
       "Could not find a map entry matching #{type_to_string(entry_type)}."
     end
 
+    defp human_reason({:struct_name_type_mismatch, expected_struct_name}) do
+      name_without_elixir = expected_struct_name
+      |> Atom.to_string()
+      |> String.split(".")
+      |> Enum.drop(1)
+      |> Enum.join(".")
+      "Expected the value to be #{name_without_elixir} struct."
+    end
+
     defp message_string(reason) do
       message_string(human_reason(reason), 0)
     end
@@ -281,6 +290,17 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
+  def match_type(
+        %{__struct__: _},
+        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]}
+      ) do
+    :ok
+  end
+
+  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:remote_type, 0, [{:atom, 0, :elixir}, {:atom, 0, :struct}, []]} = type) do
     if Map.has_key?(value, :__struct__), do: :ok, else: type_mismatch(value, type)
   end
@@ -496,20 +516,31 @@ defmodule Hammox do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :number, []}) when is_number(value) do
-    :ok
-  end
-
-  def match_type(value, {:type, _, :number, _} = type) do
-    type_mismatch(value, type)
-  end
-
   def match_type(value, {:type, _, :map, []} = type) when is_map(value) do
     if map_size(value) == 0 do
       :ok
     else
       type_mismatch(value, type)
     end
+  end
+
+  def match_type(%{__struct__: struct_name} = value, {:type, _, :map, map_entry_types} = type) do
+    {struct_field_types, rest_field_types} =
+      Enum.split_with(map_entry_types, fn entry_type ->
+        match?({:type, _, :map_field_exact, [{:atom, _, :__struct__}, _]}, entry_type)
+      end)
+
+    case struct_field_types do
+      [] ->
+        match_type(Map.from_struct(value), type)
+
+      [{:type, _, :map_field_exact, [{:atom, _, :__struct__}, {:atom, _, ^struct_name}]}] ->
+        match_type(Map.from_struct(value), {:type, 0, :map, rest_field_types})
+
+      [{:type, _, :map_field_exact, [{:atom, _, :__struct__}, {:atom, _, other_struct_name}]}] ->
+        {:error, {:struct_name_type_mismatch, struct_name, other_struct_name}}
+    end
+
   end
 
   def match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
@@ -572,6 +603,8 @@ defmodule Hammox do
           end)
 
         case unfulfilled_type do
+          {{{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}, _} ->
+            {:error, {:struct_name_type_mismatch, expected_struct_name}}
           {key_type, value_type} ->
             {:error,
              {:required_field_unfulfilled_map_type_mismatch,
@@ -581,6 +614,18 @@ defmodule Hammox do
             :ok
         end
     end
+  end
+
+  def match_type(value, {:type, _, :term, []}) do
+    match_type(value, {:type, 0, :any, []})
+  end
+
+  def match_type(value, {:type, _, :number, []}) when is_number(value) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :number, _} = type) do
+    type_mismatch(value, type)
   end
 
   def match_type(value, {:type, _, :map, _} = type) do

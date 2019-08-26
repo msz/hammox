@@ -43,7 +43,7 @@ defmodule Hammox.Test.Behaviour do
               optional(number()) => number()
             }
   @callback foo_struct_literal() :: %Hammox.Test.Struct{}
-  @callback foo_struct_fields_literal() :: %Hammox.Test.Struct{foo: atom()}
+  @callback foo_struct_fields_literal() :: %Hammox.Test.Struct{foo: number()}
   @callback foo_empty_tuple_literal() :: {}
   @callback foo_two_tuple_literal() :: {:ok, atom()}
 

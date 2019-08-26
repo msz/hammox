@@ -517,6 +517,38 @@ defmodule HammoxTest do
     end
   end
 
+  describe "struct literal" do
+    test "fail map" do
+      assert_fail(:foo_struct_literal, %{foo: :bar})
+    end
+
+    test "pass default struct" do
+      assert_pass(:foo_struct_literal, %Hammox.Test.Struct{})
+    end
+
+    test "pass struct with fields" do
+      assert_pass(:foo_struct_literal, %Hammox.Test.Struct{foo: 1})
+    end
+  end
+
+  describe "struct with fields literal" do
+    test "fail map" do
+      assert_fail(:foo_struct_fields_literal, %{foo: 1})
+    end
+
+    test "fail default struct" do
+      assert_fail(:foo_struct_fields_literal, %Hammox.Test.Struct{})
+    end
+
+    test "pass struct with correct fields" do
+      assert_pass(:foo_struct_fields_literal, %Hammox.Test.Struct{foo: 1})
+    end
+
+    test "fail struct with incorrect fields" do
+      assert_fail(:foo_struct_fields_literal, %Hammox.Test.Struct{foo: "bar"})
+    end
+  end
+
   describe "number()" do
     test "pass" do
       assert_pass(:foo_number, 1)
