@@ -422,6 +422,10 @@ defmodule Hammox do
     error || :ok
   end
 
+  def match_type(value, {:type, _, :nonempty_list, _} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :maybe_improper_list, [type1, type2]}) do
     match_type(
       value,
@@ -491,6 +495,10 @@ defmodule Hammox do
     else
       {:error, {:function_arity_type_mismatch, expected, actual}}
     end
+  end
+
+  def match_type(value, {:type, _, :fun, []}) do
+    match_type(value, {:type, 0, :fun, [{:type, 0, :any}, {:type, 0, :any, []}]})
   end
 
   def match_type(value, {:type, _, :fun, _} = type) do
@@ -624,6 +632,52 @@ defmodule Hammox do
 
   def match_type(value, {:type, _, :term, []}) do
     match_type(value, {:type, 0, :any, []})
+  end
+
+  def match_type(value, {:type, _, :arity, []}) do
+    match_type(value, {:type, 0, :range, [{:integer, 0, 0}, {:integer, 0, 255}]})
+  end
+
+  def match_type(
+        value,
+        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :as_boolean}, [inner_type]]}
+      ) do
+    match_type(value, inner_type)
+  end
+
+  def match_type(value, {:type, _, :binary, []}) do
+    match_type(value, {:type, 0, :binary, [{:integer, 0, 0}, {:integer, 0, 8}]})
+  end
+
+  def match_type(value, {:type, _, :bitstring, []}) do
+    match_type(value, {:type, 0, :binary, [{:integer, 0, 0}, {:integer, 0, 1}]})
+  end
+
+  def match_type(value, {:type, _, :boolean, []}) do
+    match_type(value, {:type, 0, :union, [{:atom, 0, true}, {:atom, 0, false}]})
+  end
+
+  def match_type(value, {:type, _, :byte, []}) do
+    match_type(value, {:type, 0, :range, [{:integer, 0, 0}, {:integer, 0, 255}]})
+  end
+
+  def match_type(value, {:type, _, :char, []}) do
+    match_type(value, {:type, 0, :range, [{:integer, 0, 0}, {:integer, 0, 0x10FFFF}]})
+  end
+
+  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :charlist}, []]}) do
+    match_type(value, {:type, 0, :list, [{:type, 0, :char, []}]})
+  end
+
+  def match_type(
+        value,
+        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :nonempty_charlist}, []]}
+      ) do
+    match_type(value, {:type, 0, :nonempty_list, [{:type, 0, :char, []}]})
+  end
+
+  def match_type(value, {:type, _, :function, []}) do
+    match_type(value, {:type, 0, :fun, []})
   end
 
   def match_type(value, {:type, _, :number, []}) when is_number(value) do

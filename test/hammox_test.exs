@@ -573,6 +573,147 @@ defmodule HammoxTest do
     end
   end
 
+  describe "term()" do
+    test "pass" do
+      assert_pass(:foo_term, :any)
+    end
+  end
+
+  describe "arity()" do
+    test "pass" do
+      assert_pass(:foo_arity, 100)
+    end
+
+    test "fail >255" do
+      assert_fail(:foo_arity, 300)
+    end
+
+    test "fail <0" do
+      assert_fail(:foo_arity, -1)
+    end
+  end
+
+  describe "as_boolean(type)" do
+    test "pass type" do
+      assert_pass(:foo_as_boolean, :ok)
+    end
+
+    test "fail wrong type" do
+      assert_fail(:foo_as_boolean, :error)
+    end
+  end
+
+  describe "binary()" do
+    test "pass string" do
+      assert_pass(:foo_binary, "abc")
+    end
+
+    test "fail bitstring" do
+      assert_fail(:foo_binary, <<1::7>>)
+    end
+  end
+
+  describe "bitstring()" do
+    test "pass string" do
+      assert_pass(:foo_bitstring, "abc")
+    end
+
+    test "pass bitstring" do
+      assert_pass(:foo_bitstring, <<1::7>>)
+    end
+
+    test "fail other" do
+      assert_fail(:foo_bitstring, 1)
+    end
+  end
+
+  describe "boolean()" do
+    test "pass true" do
+      assert_pass(:foo_boolean, true)
+    end
+
+    test "pass false" do
+      assert_pass(:foo_boolean, false)
+    end
+
+    test "fail nil" do
+      assert_fail(:foo_boolean, nil)
+    end
+  end
+
+  describe "byte()" do
+    test "pass" do
+      assert_pass(:foo_byte, 100)
+    end
+
+    test "fail >255" do
+      assert_fail(:foo_byte, 300)
+    end
+
+    test "fail <0" do
+      assert_fail(:foo_byte, -1)
+    end
+  end
+
+  describe "char()" do
+    test "pass" do
+      assert_pass(:foo_char, 0x100000)
+    end
+
+    test "fail >0x10FFFF" do
+      assert_fail(:foo_char, 0x200000)
+    end
+
+    test "fail <0" do
+      assert_fail(:foo_char, -1)
+    end
+  end
+
+  describe "charlist()" do
+    test "pass" do
+      assert_pass(:foo_charlist, [65])
+    end
+
+    test "fail" do
+      assert_fail(:foo_charlist, "A")
+    end
+  end
+
+  describe "nonempty_charlist()" do
+    test "pass" do
+      assert_pass(:foo_nonempty_charlist, [65])
+    end
+
+    test "fail empty" do
+      assert_fail(:foo_nonempty_charlist, [])
+    end
+
+    test "fail string" do
+      assert_fail(:foo_nonempty_charlist, "A")
+    end
+  end
+
+  describe "fun()" do
+    test "pass" do
+      assert_pass(:foo_fun, fn -> nil end)
+    end
+
+    test "fail" do
+      assert_fail(:foo_fun, :fun)
+    end
+  end
+
+  describe "function()" do
+    test "pass" do
+      assert_pass(:foo_function, fn -> nil end)
+    end
+
+    test "fail" do
+      assert_fail(:foo_function, :fun)
+    end
+  end
+
+
   describe "number()" do
     test "pass" do
       assert_pass(:foo_number, 1)
