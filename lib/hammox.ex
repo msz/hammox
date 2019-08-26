@@ -447,6 +447,10 @@ defmodule Hammox do
     match_improper_list_type(list, type, 0)
   end
 
+  def match_type(value, {:type, _, :nonempty_improper_list, _} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :nonempty_maybe_improper_list, [type1, type2]}) do
     match_type(
       value,
@@ -680,12 +684,95 @@ defmodule Hammox do
     match_type(value, {:type, 0, :fun, []})
   end
 
-  def match_type(value, {:type, _, :number, []}) when is_number(value) do
-    :ok
+  def match_type(value, {:type, _, :identifier, []}) do
+    match_type(
+      value,
+      {:type, 0, :union,
+       [{:type, 0, :pid, []}, {:type, 0, :port, []}, {:type, 0, :reference, []}]}
+    )
   end
 
-  def match_type(value, {:type, _, :number, _} = type) do
-    type_mismatch(value, type)
+  def match_type(value, {:type, _, :iodata, []}) do
+    match_type(value, {:type, 0, :union, [{:type, 0, :binary, []}, {:type, 0, :iolist, []}]})
+  end
+
+  def match_type(value, {:type, _, :iolist, []}) do
+    match_type(
+      value,
+      {:type, 0, :maybe_improper_list,
+       [
+         {:type, 0, :union,
+          [{:type, 0, :byte, []}, {:type, 0, :binary, []}, {:type, 0, :iolist, []}]},
+         {:type, 0, :union, [{:type, 0, :binary, []}, {:type, 0, nil, []}]}
+       ]}
+    )
+  end
+
+  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :keyword}, []]}) do
+    match_type(
+      value,
+      {:remote_type, 0, [{:atom, 0, :elixir}, {:atom, 0, :keyword}, [{:type, 0, :any, []}]]}
+    )
+  end
+
+  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :keyword}, [type]]}) do
+    match_type(
+      value,
+      {:type, 0, :list, [{:type, 0, :tuple, [{:type, 0, :atom, []}, type]}]}
+    )
+  end
+
+  def match_type(value, {:type, _, :maybe_improper_list, []}) do
+    match_type(
+      value,
+      {:type, 0, :maybe_improper_list, [{:type, 0, :any, []}, {:type, 0, :any, []}]}
+    )
+  end
+
+  def match_type(value, {:type, _, :nonempty_maybe_improper_list, []}) do
+    match_type(
+      value,
+      {:type, 0, :nonempty_maybe_improper_list, [{:type, 0, :any, []}, {:type, 0, :any, []}]}
+    )
+  end
+
+  def match_type(value, {:type, _, :mfa, []}) do
+    match_type(
+      value,
+      {:type, 0, :tuple, [{:type, 0, :module, []}, {:type, 0, :atom, []}, {:type, 0, :arity, []}]}
+    )
+  end
+
+  def match_type(value, {:type, _, :module, []}) do
+    match_type(
+      value,
+      {:type, 0, :atom, []}
+    )
+  end
+
+  def match_type(value, {:type, _, :no_return, []}) do
+    match_type(
+      value,
+      {:type, 0, :none, []}
+    )
+  end
+
+  def match_type(value, {:type, _, :node, []}) do
+    match_type(
+      value,
+      {:type, 0, :atom, []}
+    )
+  end
+
+  def match_type(value, {:type, _, :number, []}) do
+    match_type(value, {:type, 0, :union, [{:type, 0, :integer, []}, {:type, 0, :float, []}]})
+  end
+
+  def match_type(value, {:type, _, :timeout, []}) do
+    match_type(
+      value,
+      {:type, 0, :union, [{:atom, 0, :infinity}, {:type, 0, :non_neg_integer, []}]}
+    )
   end
 
   def match_type(value, {:type, _, :map, _} = type) do

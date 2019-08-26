@@ -713,14 +713,190 @@ defmodule HammoxTest do
     end
   end
 
+  describe "identifier()" do
+    test "pass pid" do
+      assert_pass(:foo_identifier, spawn(fn -> nil end))
+    end
+
+    test "pass port" do
+      {:ok, port} = :gen_tcp.listen(0, [])
+      assert_pass(:foo_identifier, port)
+    end
+
+    test "pass reference" do
+      assert_pass(:foo_identifier, Kernel.make_ref())
+    end
+
+    test "fail integer" do
+      assert_fail(:foo_identifier, 1)
+    end
+  end
+
+  describe "iodata()" do
+    test "pass iolist" do
+      assert_pass(:foo_iodata, [[123 | "a"] | "ab"])
+    end
+
+    test "pass binary" do
+      assert_pass(:foo_iodata, "abc")
+    end
+
+    test "fail" do
+      assert_fail(:foo_iodata, [:a])
+    end
+  end
+
+  describe "iolist()" do
+    test "pass" do
+      assert_pass(:foo_iolist, [[123 | "a"] | "ab"])
+    end
+
+    test "fail" do
+      assert_fail(:foo_iolist, [:a])
+    end
+  end
+
+  describe "keyword()" do
+    test "pass" do
+      assert_pass(:foo_keyword, a: 1)
+    end
+
+    test "fail" do
+      assert_fail(:foo_keyword, [{1, 2}])
+    end
+  end
+
+  describe "keyword(type)" do
+    test "pass" do
+      assert_pass(:foo_keyword_type, a: 1)
+    end
+
+    test "fail" do
+      assert_fail(:foo_keyword_type, a: :b)
+    end
+  end
+
+  describe "list()" do
+    test "pass" do
+      assert_pass(:foo_list_any, [])
+    end
+
+    test "fail" do
+      assert_fail(:foo_list_any, "")
+    end
+  end
+
+  describe "nonempty_list()" do
+    test "pass" do
+      assert_pass(:foo_nonempty_list_any, [1])
+    end
+
+    test "fail empty" do
+      assert_fail(:foo_nonempty_list_any, [])
+    end
+  end
+
+  describe "maybe_improper_list()" do
+    test "empty list pass" do
+      assert_pass(:foo_maybe_improper_list_any, [])
+    end
+
+    test "proper list type pass" do
+      assert_pass(:foo_maybe_improper_list_any, [:a])
+    end
+
+    test "improper list type pass" do
+      assert_pass(:foo_maybe_improper_list_any, [:a | :b])
+    end
+
+    test "not list fail" do
+      assert_fail(:foo_maybe_improper_list_any, "b")
+    end
+  end
+
+  describe "nonempty_maybe_improper_list()" do
+    test "empty list fail" do
+      assert_fail(:foo_nonempty_maybe_improper_list_any, [])
+    end
+
+    test "proper list pass" do
+      assert_pass(:foo_nonempty_maybe_improper_list_any, [:a])
+    end
+
+    test "improper list type pass" do
+      assert_pass(:foo_nonempty_maybe_improper_list_any, [:a | :b])
+    end
+  end
+
+  describe "mfa()" do
+    test "pass" do
+      assert_pass(:foo_mfa, {Enum, :map, 2})
+    end
+
+    test "fail" do
+      assert_fail(:foo_mfa, {Enum, :map, -1})
+    end
+  end
+
+  describe "module()" do
+    test "pass" do
+      assert_pass(:foo_module, Enum)
+    end
+
+    test "fail" do
+      assert_fail(:foo_module, "Enum")
+    end
+  end
+
+  describe "no_return()" do
+    test "fail" do
+      assert_fail(:foo_no_return, :foo)
+    end
+  end
+
+  describe "node()" do
+    test "pass" do
+      assert_pass(:foo_node, :node)
+    end
+
+    test "fail" do
+      assert_fail(:foo_node, "node")
+    end
+  end
 
   describe "number()" do
-    test "pass" do
+    test "pass integer" do
       assert_pass(:foo_number, 1)
+    end
+
+    test "pass float" do
+      assert_pass(:foo_number, 1.0)
     end
 
     test "fail" do
       assert_fail(:foo_number, "baz")
+    end
+  end
+
+  describe "timeout()" do
+    test "pass :infinity" do
+      assert_pass(:foo_timeout, :infinity)
+    end
+
+    test "fail other atoms" do
+      assert_fail(:foo_timeout, :foo)
+    end
+
+    test "pass non negative integer" do
+      assert_pass(:foo_timeout, 0)
+    end
+
+    test "fail negative integer" do
+      assert_fail(:foo_timeout, -1)
+    end
+
+    test "fail float" do
+      assert_fail(:foo_timeout, 1.0)
     end
   end
 
