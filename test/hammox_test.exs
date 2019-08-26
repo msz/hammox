@@ -435,7 +435,85 @@ defmodule HammoxTest do
     end
 
     test "wrong type fail" do
-      assert_pass(:foo_keyword_list_literal, key1: "bar")
+      assert_fail(:foo_keyword_list_literal, key1: "bar")
+    end
+  end
+
+  describe "empty map literal" do
+    test "pass" do
+      assert_pass(:foo_empty_map_literal, %{})
+    end
+
+    test "fail" do
+      assert_fail(:foo_empty_map_literal, %{a: 1})
+    end
+  end
+
+  describe "map with required atom key literal" do
+    test "empty fail" do
+      assert_fail(:foo_map_required_atom_key_literal, %{})
+    end
+
+    test "pass" do
+      assert_pass(:foo_map_required_atom_key_literal, %{key: :bar})
+    end
+
+    test "unknown key fail" do
+      assert_fail(:foo_map_required_atom_key_literal, %{key: :bar, key2: :baz})
+    end
+  end
+
+  describe "map with required key literal" do
+    test "empty fail" do
+      assert_fail(:foo_map_required_key_literal, %{})
+    end
+
+    test "pass" do
+      assert_pass(:foo_map_required_key_literal, %{key: :bar})
+    end
+
+    test "pass multiple keys matching type" do
+      assert_pass(:foo_map_required_key_literal, %{key1: :bar, key2: :baz})
+    end
+
+    test "unknown key type fail" do
+      assert_fail(:foo_map_required_key_literal, %{key1: :bar, key2: 1})
+    end
+  end
+
+  describe "map with optional key literal" do
+    test "empty pass" do
+      assert_pass(:foo_map_optional_key_literal, %{})
+    end
+
+    test "pass" do
+      assert_pass(:foo_map_optional_key_literal, %{key: :bar})
+    end
+
+    test "unknown key type fail" do
+      assert_fail(:foo_map_optional_key_literal, %{key1: :bar, key2: 1})
+    end
+  end
+
+  describe "map with required and optional keys literal" do
+    test "empty fail" do
+      assert_fail(:foo_map_required_and_optional_key_literal, %{})
+    end
+
+    test "pass without optional" do
+      assert_pass(:foo_map_required_and_optional_key_literal, %{key: :bar})
+    end
+
+    test "pass multiple keys matching required type" do
+      assert_pass(:foo_map_required_and_optional_key_literal, %{key1: :bar, key2: :baz})
+    end
+
+    test "pass optional key type" do
+      assert_pass(:foo_map_required_and_optional_key_literal, %{:key1 => :bar, 1 => 2})
+    end
+
+    test "fail unknown type" do
+      assert_fail(:foo_map_required_and_optional_key_literal, %{key1: :bar, key2: []})
     end
   end
 

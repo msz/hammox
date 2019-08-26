@@ -38,6 +38,10 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_map_required_atom_key_literal() :: %{key: atom()}
   @callback foo_map_required_key_literal() :: %{required(atom()) => atom()}
   @callback foo_map_optional_key_literal() :: %{optional(atom()) => atom()}
+  @callback foo_map_required_and_optional_key_literal() :: %{
+              required(atom()) => atom(),
+              optional(number()) => number()
+            }
   @callback foo_struct_literal() :: %Hammox.Test.Struct{}
   @callback foo_struct_fields_literal() :: %Hammox.Test.Struct{foo: atom()}
   @callback foo_empty_tuple_literal() :: {}

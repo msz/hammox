@@ -54,6 +54,16 @@ defmodule Hammox do
       "Value #{inspect(value)} does not match type #{type_to_string(type)}."
     end
 
+    defp human_reason({:map_entry_type_mismatch, value, entry_types}) do
+      "Entry #{inspect(value)} does not match any of the map entry types: #{
+        entry_types |> Enum.map(&type_to_string/1) |> Enum.join(", ")
+      }."
+    end
+
+    defp human_reason({:required_field_unfulfilled_map_type_mismatch, entry_type}) do
+      "Could not find a map entry matching #{type_to_string(entry_type)}."
+    end
+
     defp message_string(reason) do
       message_string(human_reason(reason), 0)
     end
@@ -239,10 +249,6 @@ defmodule Hammox do
 
   def match_type(value, {:type, _, :map, :any}) when is_map(value) do
     :ok
-  end
-
-  def match_type(value, {:type, _, :map, :any} = type) do
-    type_mismatch(value, type)
   end
 
   def match_type(value, {:type, _, :pid, []}) when is_pid(value) do
@@ -489,6 +495,89 @@ defmodule Hammox do
   end
 
   def match_type(value, {:type, _, :number, _} = type) do
+    type_mismatch(value, type)
+  end
+
+  def match_type(value, {:type, _, :map, []} = type) when is_map(value) do
+    if map_size(value) == 0 do
+      :ok
+    else
+      type_mismatch(value, type)
+    end
+  end
+
+  def match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
+    [required, optional] =
+      map_entry_types
+      |> Enum.map(fn
+        {:type, _, :map_field_exact, [key_type, value_type]} ->
+          {:required, {key_type, value_type}}
+
+        {:type, _, :map_field_assoc, [key_type, value_type]} ->
+          {:optional, {key_type, value_type}}
+      end)
+      |> Enum.split_with(fn
+        {:required, _} -> true
+        {:optional, _} -> false
+      end)
+      |> Tuple.to_list()
+      |> Enum.map(fn types -> Enum.map(types, fn {_, pair_type} -> pair_type end) end)
+
+    required_hit_map =
+      required
+      |> Enum.map(fn type -> {type, 0} end)
+      |> Enum.into(%{})
+
+    type_match_result =
+      Enum.reduce_while(value, required_hit_map, fn entry, hit_map ->
+        hit_map_for_entry =
+          Enum.reduce_while(hit_map, hit_map, fn {{key_type, value_type} = entry_type, hits},
+                                                 curr_hit_map ->
+            case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
+              :ok -> {:halt, Map.put(curr_hit_map, entry_type, hits + 1)}
+              {:error, _} -> {:cont, curr_hit_map}
+            end
+          end)
+
+        did_hit_optional =
+          Enum.any?(optional, fn {key_type, value_type} ->
+            case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
+              :ok -> true
+              {:error, _} -> false
+            end
+          end)
+
+        if hit_map_for_entry == hit_map and not did_hit_optional do
+          {:halt, {:error, {:map_entry_type_mismatch, entry, map_entry_types}}}
+        else
+          {:cont, hit_map_for_entry}
+        end
+      end)
+
+    case type_match_result do
+      {:error, _} = error ->
+        error
+
+      required_hits when is_map(required_hits) ->
+        unfulfilled_type =
+          Enum.find(required_hits, fn
+            {_, 0} -> true
+            {_, _} -> false
+          end)
+
+        case unfulfilled_type do
+          {key_type, value_type} ->
+            {:error,
+             {:required_field_unfulfilled_map_type_mismatch,
+              {:type, 0, :map_field_exact, [key_type, value_type]}}}
+
+          nil ->
+            :ok
+        end
+    end
+  end
+
+  def match_type(value, {:type, _, :map, _} = type) do
     type_mismatch(value, type)
   end
 
