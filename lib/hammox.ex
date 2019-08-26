@@ -54,10 +54,8 @@ defmodule Hammox do
       "Value #{inspect(value)} does not match type #{type_to_string(type)}."
     end
 
-    defp human_reason({:map_entry_type_mismatch, value, entry_types}) do
-      "Entry #{inspect(value)} does not match any of the map entry types: #{
-        entry_types |> Enum.map(&type_to_string/1) |> Enum.join(", ")
-      }."
+    defp human_reason({:map_entry_type_mismatch, value, _entry_types}) do
+      "Entry #{inspect(value)} does not match any of the map entry types."
     end
 
     defp human_reason({:required_field_unfulfilled_map_type_mismatch, entry_type}) do
@@ -80,6 +78,14 @@ defmodule Hammox do
       for(_ <- 0..level, do: "  ")
       |> Enum.drop(1)
       |> Enum.join()
+    end
+
+    defp type_to_string({:type, _, :map_field_exact, [{type1, type2}, _]}) do
+      "required(#{type_to_string(type1)}) => #{type_to_string(type2)}"
+    end
+
+    defp type_to_string({:type, _, :map_field_assoc, [{type1, type2}, _]}) do
+      "optional(#{type_to_string(type1)}) => #{type_to_string(type2)}"
     end
 
     defp type_to_string(type) do
