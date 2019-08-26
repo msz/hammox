@@ -549,6 +549,30 @@ defmodule HammoxTest do
     end
   end
 
+  describe "empty tuple" do
+    test "pass" do
+      assert_pass(:foo_empty_tuple_literal, {})
+    end
+
+    test "fail" do
+      assert_fail(:foo_empty_tuple_literal, {:foo})
+    end
+  end
+
+  describe "2-tuple" do
+    test "fail different size" do
+      assert_fail(:foo_two_tuple_literal, {:foo})
+    end
+
+    test "fail wrong type" do
+      assert_fail(:foo_two_tuple_literal, {:error, :reason})
+    end
+
+    test "pass" do
+      assert_pass(:foo_two_tuple_literal, {:ok, :details})
+    end
+  end
+
   describe "number()" do
     test "pass" do
       assert_pass(:foo_number, 1)

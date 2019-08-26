@@ -63,11 +63,13 @@ defmodule Hammox do
     end
 
     defp human_reason({:struct_name_type_mismatch, expected_struct_name}) do
-      name_without_elixir = expected_struct_name
-      |> Atom.to_string()
-      |> String.split(".")
-      |> Enum.drop(1)
-      |> Enum.join(".")
+      name_without_elixir =
+        expected_struct_name
+        |> Atom.to_string()
+        |> String.split(".")
+        |> Enum.drop(1)
+        |> Enum.join(".")
+
       "Expected the value to be #{name_without_elixir} struct."
     end
 
@@ -328,6 +330,10 @@ defmodule Hammox do
     error || :ok
   end
 
+  def match_type(value, {:type, _, :tuple, _} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :float, []}) when is_float(value) do
     :ok
   end
@@ -540,7 +546,6 @@ defmodule Hammox do
       [{:type, _, :map_field_exact, [{:atom, _, :__struct__}, {:atom, _, other_struct_name}]}] ->
         {:error, {:struct_name_type_mismatch, struct_name, other_struct_name}}
     end
-
   end
 
   def match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
@@ -605,6 +610,7 @@ defmodule Hammox do
         case unfulfilled_type do
           {{{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}, _} ->
             {:error, {:struct_name_type_mismatch, expected_struct_name}}
+
           {key_type, value_type} ->
             {:error,
              {:required_field_unfulfilled_map_type_mismatch,
