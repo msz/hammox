@@ -135,7 +135,7 @@ defmodule Hammox do
     hammox_code =
       case fetch_typespec_for_mock(mock, name, arity) do
         nil -> code
-        typespec -> ensure(code, typespec, arity)
+        typespec -> protect(code, typespec, arity)
       end
 
     Mox.expect(mock, name, n, hammox_code)
@@ -173,27 +173,27 @@ defmodule Hammox do
     Mox.verify_on_exit!(context)
   end
 
-  def ensure({module_name, function_name, arity}, behaviour_name)
+  def protect({module_name, function_name, arity}, behaviour_name)
       when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
              is_atom(behaviour_name) do
     code = {module_name, function_name}
     typespec = fetch_typespec(behaviour_name, function_name, arity)
-    ensure(code, typespec, arity)
+    protect(code, typespec, arity)
   end
 
-  def ensure(code, typespec, 0) do
+  def protect(code, typespec, 0) do
     fn ->
       decorated_body(code, typespec, [])
     end
   end
 
-  def ensure(code, typespec, 1) do
+  def protect(code, typespec, 1) do
     fn arg1 ->
       decorated_body(code, typespec, [arg1])
     end
   end
 
-  def ensure(code, typespec, 2) do
+  def protect(code, typespec, 2) do
     fn arg1, arg2 ->
       decorated_body(code, typespec, [arg1, arg2])
     end
