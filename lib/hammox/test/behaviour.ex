@@ -71,10 +71,9 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_mfa :: mfa()
   @callback foo_module :: module()
   @callback foo_no_return :: no_return()
+  @callback foo_number() :: number()
   @callback foo_node :: atom()
   @callback foo_timeout :: timeout()
-
-  @callback foo_number() :: number()
 
   @callback foo_no_arg() :: :ok
   @callback foo_unnamed_arg(atom()) :: :ok
