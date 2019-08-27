@@ -183,65 +183,65 @@ defmodule Hammox do
 
   def protect(code, typespec, 0) do
     fn ->
-      decorated_body(code, typespec, [])
+      protected_code(code, typespec, [])
     end
   end
 
   def protect(code, typespec, 1) do
     fn arg1 ->
-      decorated_body(code, typespec, [arg1])
+      protected_code(code, typespec, [arg1])
     end
   end
 
   def protect(code, typespec, 2) do
     fn arg1, arg2 ->
-      decorated_body(code, typespec, [arg1, arg2])
+      protected_code(code, typespec, [arg1, arg2])
     end
   end
 
   def protect(code, typespec, 3) do
     fn arg1, arg2, arg3 ->
-      decorated_body(code, typespec, [arg1, arg2, arg3])
+      protected_code(code, typespec, [arg1, arg2, arg3])
     end
   end
 
   def protect(code, typespec, 4) do
     fn arg1, arg2, arg3, arg4 ->
-      decorated_body(code, typespec, [arg1, arg2, arg3, arg4])
+      protected_code(code, typespec, [arg1, arg2, arg3, arg4])
     end
   end
 
   def protect(code, typespec, 5) do
     fn arg1, arg2, arg3, arg4, arg5 ->
-      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5])
+      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5])
     end
   end
 
   def protect(code, typespec, 6) do
     fn arg1, arg2, arg3, arg4, arg5, arg6 ->
-      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6])
+      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6])
     end
   end
 
   def protect(code, typespec, 7) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7 ->
-      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
+      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
     end
   end
 
   def protect(code, typespec, 8) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ->
-      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
+      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
     end
   end
 
   def protect(code, typespec, 9) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 ->
-      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
+      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
     end
   end
 
-  defp decorated_body(code, typespec, args) do
+  defp protected_code(code, typespec, args) do
     args
     |> Enum.zip(0..(length(args) - 1))
     |> Enum.each(fn {arg, index} ->
