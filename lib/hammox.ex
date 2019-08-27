@@ -199,6 +199,48 @@ defmodule Hammox do
     end
   end
 
+  def protect(code, typespec, 3) do
+    fn arg1, arg2, arg3 ->
+      decorated_body(code, typespec, [arg1, arg2, arg3])
+    end
+  end
+
+  def protect(code, typespec, 4) do
+    fn arg1, arg2, arg3, arg4 ->
+      decorated_body(code, typespec, [arg1, arg2, arg3, arg4])
+    end
+  end
+
+  def protect(code, typespec, 5) do
+    fn arg1, arg2, arg3, arg4, arg5 ->
+      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5])
+    end
+  end
+
+  def protect(code, typespec, 6) do
+    fn arg1, arg2, arg3, arg4, arg5, arg6 ->
+      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6])
+    end
+  end
+
+  def protect(code, typespec, 7) do
+    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7 ->
+      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
+    end
+  end
+
+  def protect(code, typespec, 8) do
+    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ->
+      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
+    end
+  end
+
+  def protect(code, typespec, 9) do
+    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 ->
+      decorated_body(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
+    end
+  end
+
   defp decorated_body(code, typespec, args) do
     args
     |> Enum.zip(0..(length(args) - 1))
