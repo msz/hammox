@@ -63,14 +63,15 @@ defmodule Hammox do
     end
 
     defp human_reason({:struct_name_type_mismatch, expected_struct_name}) do
-      name_without_elixir =
-        expected_struct_name
-        |> Atom.to_string()
-        |> String.split(".")
-        |> Enum.drop(1)
-        |> Enum.join(".")
+      "Expected the value to be #{strip_elixir(expected_struct_name)} struct."
+    end
 
-      "Expected the value to be #{name_without_elixir} struct."
+    defp human_reason({:module_fetch_failure, module_name}) do
+      "Could not load module #{strip_elixir(module_name)}."
+    end
+
+    defp human_reason({:remote_type_fetch_failure, {module_name, type_name, arity}}) do
+      "Could not find type #{type_name}/#{arity} in #{strip_elixir(module_name)}."
     end
 
     defp message_string(reason) do
@@ -109,6 +110,14 @@ defmodule Hammox do
         |> String.split(" :: ")
 
       type_string
+    end
+
+    defp strip_elixir(module_name) do
+      module_name
+      |> Atom.to_string()
+      |> String.split(".")
+      |> Enum.drop(1)
+      |> Enum.join(".")
     end
   end
 
@@ -375,6 +384,10 @@ defmodule Hammox do
   end
 
   def match_type([], {:type, _, :list, _}) do
+    :ok
+  end
+
+  def match_type(value, {:type, _, :list, []}) when is_list(value) do
     :ok
   end
 
@@ -777,6 +790,66 @@ defmodule Hammox do
       value,
       {:type, 0, :union, [{:atom, 0, :infinity}, {:type, 0, :non_neg_integer, []}]}
     )
+  end
+
+  def match_type(
+        value,
+        {:remote_type, _, _} = type
+      ) do
+    with {:ok, remote_type} <- resolve_remote_type(type) do
+      match_type(value, remote_type)
+    end
+  end
+
+  def resolve_remote_type(
+        {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]}
+      )
+      when is_atom(module_name) and is_atom(type_name) and is_list(args) do
+    with {:ok, types} <- fetch_types(module_name),
+         {:ok, {:type, {_name, type, vars}}} <- get_type(types, type_name, length(args)) do
+      resolved_type =
+        args
+        |> Enum.zip(vars)
+        |> Enum.reduce(type, fn {arg, var}, resolved_type ->
+          fill_type_var(resolved_type, var, arg)
+        end)
+
+      {:ok, resolved_type}
+    else
+      {:error, {:module_fetch_failure, _}} = error ->
+        error
+
+      {:error, {:type_not_found, {type_name, arity}}} ->
+        {:error, {:remote_type_fetch_failure, {module_name, type_name, arity}}}
+    end
+  end
+
+  defp fill_type_var(type, var, arg) when type == var do
+    arg
+  end
+
+  defp fill_type_var({:type, position, name, params}, var, arg) when is_list(params) do
+    {:type, position, name, Enum.map(params, fn param -> fill_type_var(param, var, arg) end)}
+  end
+
+  defp fill_type_var(type, _var, _arg) do
+    type
+  end
+
+  defp fetch_types(module_name) do
+    case Code.Typespec.fetch_types(module_name) do
+      {:ok, _} = ok -> ok
+      :error -> {:error, {:module_fetch_failure, module_name}}
+    end
+  end
+
+  defp get_type(type_list, type_name, arity) do
+    case Enum.find(type_list, fn {:type, {name, _type, params}} ->
+           name == type_name and length(params) == arity
+         end) do
+      nil -> {:error, {:type_not_found, {type_name, arity}}}
+      type -> {:ok, type}
+    end
   end
 
   defp match_improper_list_type(

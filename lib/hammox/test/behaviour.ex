@@ -75,6 +75,11 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_node :: atom()
   @callback foo_timeout :: timeout()
 
+  @callback foo_remote_type :: Hammox.Test.Struct.my_list()
+  @callback foo_remote_type_with_arg :: Hammox.Test.Struct.my_list(number())
+  @callback foo_nonexistent_remote_module :: Hammox.Test.NonexistentStruct.my_list()
+  @callback foo_nonexistent_remote_type :: Hammox.Test.Struct.nonexistent_type()
+
   @callback foo_no_arg() :: :ok
   @callback foo_unnamed_arg(atom()) :: :ok
   @callback foo_named_arg(arg1 :: atom()) :: :ok
