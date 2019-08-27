@@ -8,6 +8,13 @@ defmodule HammoxTest do
     :ok
   end
 
+  describe "ensure/2" do
+    test "returns function protected from contract errors" do
+      fun = Hammox.ensure({Hammox.Test.SmallImplementation, :foo, 0}, Hammox.Test.SmallBehaviour)
+      assert_raise(Hammox.TypeMatchError, fn -> fun.() end)
+    end
+  end
+
   describe "union" do
     test "pass first type" do
       assert_pass(:foo_union, :a)

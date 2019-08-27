@@ -173,6 +173,14 @@ defmodule Hammox do
     Mox.verify_on_exit!(context)
   end
 
+  def ensure({module_name, function_name, arity}, behaviour_name)
+      when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
+             is_atom(behaviour_name) do
+    code = {module_name, function_name}
+    typespec = fetch_typespec(behaviour_name, function_name, arity)
+    ensure(code, typespec, arity)
+  end
+
   def ensure(code, typespec, 0) do
     fn ->
       decorated_body(code, typespec, [])
@@ -207,7 +215,12 @@ defmodule Hammox do
       end
     end)
 
-    return_value = apply(code, args)
+    return_value =
+      case code do
+        {module_name, function_name} -> apply(module_name, function_name, args)
+        anonymous when is_function(anonymous) -> apply(anonymous, args)
+      end
+
     {:type, _, :fun, [_, return_type]} = typespec
 
     case match_type(return_value, return_type) do
