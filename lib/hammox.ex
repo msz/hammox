@@ -634,6 +634,10 @@ defmodule Hammox do
     end
   end
 
+  def match_type(value, {:type, _, :map, _} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :term, []}) do
     match_type(value, {:type, 0, :any, []})
   end
@@ -773,10 +777,6 @@ defmodule Hammox do
       value,
       {:type, 0, :union, [{:atom, 0, :infinity}, {:type, 0, :non_neg_integer, []}]}
     )
-  end
-
-  def match_type(value, {:type, _, :map, _} = type) do
-    type_mismatch(value, type)
   end
 
   defp match_improper_list_type(
