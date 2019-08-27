@@ -133,7 +133,7 @@ defmodule Hammox do
     arity = :erlang.fun_info(code)[:arity]
 
     hammox_code =
-      case fetch_typespec(mock, name, arity) do
+      case fetch_typespec_for_mock(mock, name, arity) do
         nil -> code
         typespec -> ensure(code, typespec, arity)
       end
@@ -222,21 +222,22 @@ defmodule Hammox do
     return_value
   end
 
-  def fetch_typespec(mock_name, function_name, arity)
-      when is_atom(mock_name) and is_atom(function_name) and is_integer(arity) do
-    fetch_results =
-      mock_name.__mock_for__()
-      |> Enum.map(fn behaviour ->
-        {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour)
-        callbacks
-      end)
-      |> Enum.concat()
-      |> Enum.filter(fn callback -> match?({{^function_name, ^arity}, _}, callback) end)
+  def fetch_typespec(behaviour_module_name, function_name, arity) do
+    {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
 
-    case fetch_results do
-      [{{^function_name, ^arity}, [typespec]}] -> typespec
-      [] -> nil
-    end
+    Enum.find_value(callbacks, fn
+      {{^function_name, ^arity}, [typespec]} -> typespec
+      _ -> nil
+    end)
+  end
+
+  def fetch_typespec_for_mock(mock_name, function_name, arity)
+      when is_atom(mock_name) and is_atom(function_name) and is_integer(arity) do
+    mock_name.__mock_for__()
+    |> Enum.map(fn behaviour ->
+      fetch_typespec(behaviour, function_name, arity)
+    end)
+    |> Enum.find(fn elem -> elem != nil end)
   end
 
   def arg_typespec(function_typespec, arg_index) do
