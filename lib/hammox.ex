@@ -135,7 +135,7 @@ defmodule Hammox do
     hammox_code =
       case fetch_typespec(mock, name, arity) do
         nil -> code
-        typespec -> decorate(code, typespec, arity)
+        typespec -> ensure(code, typespec, arity)
       end
 
     Mox.expect(mock, name, n, hammox_code)
@@ -173,19 +173,19 @@ defmodule Hammox do
     Mox.verify_on_exit!(context)
   end
 
-  def decorate(code, typespec, 0) do
+  def ensure(code, typespec, 0) do
     fn ->
       decorated_body(code, typespec, [])
     end
   end
 
-  def decorate(code, typespec, 1) do
+  def ensure(code, typespec, 1) do
     fn arg1 ->
       decorated_body(code, typespec, [arg1])
     end
   end
 
-  def decorate(code, typespec, 2) do
+  def ensure(code, typespec, 2) do
     fn arg1, arg2 ->
       decorated_body(code, typespec, [arg1, arg2])
     end
