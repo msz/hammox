@@ -21,7 +21,8 @@ defmodule Hammox.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:mox, "~> 0.5"}
+      {:mox, "~> 0.5"},
+      {:ordinal, "~> 0.1.0"}
     ]
   end
 end

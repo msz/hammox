@@ -10,9 +10,10 @@ defmodule Hammox do
     end
 
     defp human_reason({:arg_type_mismatch, name, index, value, type, reason}) do
-      {"#{index}th argument value #{inspect(value)} does not match #{index}th parameter#{
-         if name, do: " \"" <> to_string(name) <> "\""
-       }'s type #{type_to_string(type)}.", human_reason(reason)}
+      {"#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{
+         Ordinal.ordinalize(index + 1)
+       } parameter#{if name, do: " \"" <> to_string(name) <> "\""}'s type #{type_to_string(type)}.",
+       human_reason(reason)}
     end
 
     defp human_reason({:return_type_mismatch, value, type, reason}) do
