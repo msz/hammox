@@ -59,6 +59,33 @@ defmodule Hammox do
       "Entry #{inspect(value)} does not match any of the map entry types."
     end
 
+    defp human_reason({:map_key_type_mismatch, key, [{key_type, key_reason}]}) do
+      {"Key #{inspect(key)} does not match key type #{type_to_string(key_type)}.",
+       human_reason(key_reason)}
+    end
+
+    defp human_reason({:map_key_type_mismatch, key, types_and_reasons}) do
+      "Key #{inspect(key)} does not match any of the allowed key types #{
+        types_and_reasons
+        |> Enum.map(fn {key_type, _} -> type_to_string(key_type) end)
+        |> Enum.join(", ")
+      }."
+    end
+
+    defp human_reason({:map_value_type_mismatch, key, value, [{value_type, value_reason}]}) do
+      {"Value #{inspect(value)} for key #{inspect(key)} does not match value type #{
+         type_to_string(value_type)
+       }.", human_reason(value_reason)}
+    end
+
+    defp human_reason({:map_value_type_mismatch, key, value, types_and_reasons}) do
+      "Value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed value types #{
+        types_and_reasons
+        |> Enum.map(fn {value_type, _} -> type_to_string(value_type) end)
+        |> Enum.join(", ")
+      }."
+    end
+
     defp human_reason({:required_field_unfulfilled_map_type_mismatch, entry_type}) do
       "Could not find a map entry matching #{type_to_string(entry_type)}."
     end
@@ -645,22 +672,70 @@ defmodule Hammox do
       |> Enum.into(%{})
 
     type_match_result =
-      Enum.reduce_while(value, hit_map, fn entry, current_hit_map ->
-        hit_map_for_entry =
-          Enum.reduce(current_hit_map, current_hit_map, fn {{_, {key_type, value_type}} =
-                                                              entry_type, hits},
-                                                           hit_map_for_entry ->
-            case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
-              :ok -> Map.put(hit_map_for_entry, entry_type, hits + 1)
-              {:error, _} -> hit_map_for_entry
-            end
+      Enum.reduce_while(value, hit_map, fn {key, value}, current_hit_map ->
+        entry_match_results =
+          Enum.map(current_hit_map, fn {{_, {key_type, value_type}} = hit_map_key, _hits} ->
+            {hit_map_key, match_type(key, key_type), match_type(value, value_type)}
           end)
 
-        if hit_map_for_entry == current_hit_map do
-          {:halt, {:error, {:map_entry_type_mismatch, entry, map_entry_types}}}
-        else
-          {:cont, hit_map_for_entry}
+        full_hits =
+          Enum.filter(entry_match_results, fn
+            {_, :ok, :ok} -> true
+            {_, _, _} -> false
+          end)
+
+        entry_result =
+          case full_hits do
+            [_ | _] ->
+              Enum.reduce(full_hits, current_hit_map, fn {hit_map_key, _, _},
+                                                         current_current_hit_map ->
+                Map.update!(current_current_hit_map, hit_map_key, fn hits -> hits + 1 end)
+              end)
+
+            [] ->
+              key_hits =
+                Enum.filter(entry_match_results, fn
+                  {_, :ok, _} -> true
+                  {_, _, _} -> false
+                end)
+
+              case key_hits do
+                [] ->
+                  {:error,
+                   {:map_key_type_mismatch, key,
+                    Enum.map(entry_match_results, fn {{_, {key_type, _}}, {:error, key_reason}, _} ->
+                      {key_type, key_reason}
+                    end)}}
+
+                [_ | _] ->
+                  {:error,
+                   {:map_value_type_mismatch, key, value,
+                    Enum.map(key_hits, fn {{_, {_, value_type}}, _, {:error, value_reason}} ->
+                      {value_type, value_reason}
+                    end)}}
+              end
+          end
+
+        case entry_result do
+          {:error, _} = error -> {:halt, error}
+          entry_hit_map when is_map(entry_hit_map) -> {:cont, entry_hit_map}
         end
+
+        # hit_map_for_entry =
+        #   Enum.reduce(current_hit_map, current_hit_map, fn {{_, {key_type, value_type}} =
+        #                                                       entry_type, hits},
+        #                                                    hit_map_for_entry ->
+        #     case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
+        #       :ok -> Map.put(hit_map_for_entry, entry_type, hits + 1)
+        #       {:error, _} -> hit_map_for_entry
+        #     end
+        #   end)
+
+        # if hit_map_for_entry == current_hit_map do
+        #   {:halt, {:error, {:map_entry_type_mismatch, entry, map_entry_types}}}
+        # else
+        #   {:cont, hit_map_for_entry}
+        # end
       end)
 
     case type_match_result do
