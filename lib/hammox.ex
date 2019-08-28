@@ -632,7 +632,7 @@ defmodule Hammox do
   end
 
   def match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
-    [required, optional] =
+    hit_map =
       map_entry_types
       |> Enum.map(fn
         {:type, _, :map_field_exact, [key_type, value_type]} ->
@@ -641,38 +641,22 @@ defmodule Hammox do
         {:type, _, :map_field_assoc, [key_type, value_type]} ->
           {:optional, {key_type, value_type}}
       end)
-      |> Enum.split_with(fn
-        {:required, _} -> true
-        {:optional, _} -> false
-      end)
-      |> Tuple.to_list()
-      |> Enum.map(fn types -> Enum.map(types, fn {_, pair_type} -> pair_type end) end)
-
-    required_hit_map =
-      required
-      |> Enum.map(fn type -> {type, 0} end)
+      |> Enum.map(fn key -> {key, 0} end)
       |> Enum.into(%{})
 
     type_match_result =
-      Enum.reduce_while(value, required_hit_map, fn entry, hit_map ->
+      Enum.reduce_while(value, hit_map, fn entry, current_hit_map ->
         hit_map_for_entry =
-          Enum.reduce_while(hit_map, hit_map, fn {{key_type, value_type} = entry_type, hits},
-                                                 curr_hit_map ->
+          Enum.reduce_while(current_hit_map, current_hit_map, fn {{_, {key_type, value_type}} =
+                                                                    entry_type, hits},
+                                                                 hit_map_for_entry ->
             case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
-              :ok -> {:halt, Map.put(curr_hit_map, entry_type, hits + 1)}
-              {:error, _} -> {:cont, curr_hit_map}
+              :ok -> {:halt, Map.put(hit_map_for_entry, entry_type, hits + 1)}
+              {:error, _} -> {:cont, hit_map_for_entry}
             end
           end)
 
-        did_hit_optional =
-          Enum.any?(optional, fn {key_type, value_type} ->
-            case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
-              :ok -> true
-              {:error, _} -> false
-            end
-          end)
-
-        if hit_map_for_entry == hit_map and not did_hit_optional do
+        if hit_map_for_entry == current_hit_map do
           {:halt, {:error, {:map_entry_type_mismatch, entry, map_entry_types}}}
         else
           {:cont, hit_map_for_entry}
@@ -686,15 +670,15 @@ defmodule Hammox do
       required_hits when is_map(required_hits) ->
         unfulfilled_type =
           Enum.find(required_hits, fn
-            {_, 0} -> true
+            {{:required, _}, 0} -> true
             {_, _} -> false
           end)
 
         case unfulfilled_type do
-          {{{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}, _} ->
+          {{_, {{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}}, _} ->
             {:error, {:struct_name_type_mismatch, expected_struct_name}}
 
-          {key_type, value_type} ->
+          {{_, {key_type, value_type}}, _} ->
             {:error,
              {:required_field_unfulfilled_map_type_mismatch,
               {:type, 0, :map_field_exact, [key_type, value_type]}}}
