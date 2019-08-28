@@ -93,11 +93,11 @@ defmodule Hammox do
       |> Enum.join()
     end
 
-    defp type_to_string({:type, _, :map_field_exact, [{type1, type2}, _]}) do
+    defp type_to_string({:type, _, :map_field_exact, [type1, type2]}) do
       "required(#{type_to_string(type1)}) => #{type_to_string(type2)}"
     end
 
-    defp type_to_string({:type, _, :map_field_assoc, [{type1, type2}, _]}) do
+    defp type_to_string({:type, _, :map_field_assoc, [type1, type2]}) do
       "optional(#{type_to_string(type1)}) => #{type_to_string(type2)}"
     end
 
@@ -647,12 +647,12 @@ defmodule Hammox do
     type_match_result =
       Enum.reduce_while(value, hit_map, fn entry, current_hit_map ->
         hit_map_for_entry =
-          Enum.reduce_while(current_hit_map, current_hit_map, fn {{_, {key_type, value_type}} =
-                                                                    entry_type, hits},
-                                                                 hit_map_for_entry ->
+          Enum.reduce(current_hit_map, current_hit_map, fn {{_, {key_type, value_type}} =
+                                                              entry_type, hits},
+                                                           hit_map_for_entry ->
             case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
-              :ok -> {:halt, Map.put(hit_map_for_entry, entry_type, hits + 1)}
-              {:error, _} -> {:cont, hit_map_for_entry}
+              :ok -> Map.put(hit_map_for_entry, entry_type, hits + 1)
+              {:error, _} -> hit_map_for_entry
             end
           end)
 

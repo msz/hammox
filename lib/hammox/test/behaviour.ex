@@ -42,6 +42,10 @@ defmodule Hammox.Test.Behaviour do
               required(atom()) => atom(),
               optional(number()) => number()
             }
+  @callback foo_map_overlapping_required_types_literal() :: %{
+              required(atom()) => atom(),
+              required(atom() | number()) => atom()
+            }
   @callback foo_struct_literal() :: %Hammox.Test.Struct{}
   @callback foo_struct_fields_literal() :: %Hammox.Test.Struct{foo: number()}
   @callback foo_empty_tuple_literal() :: {}

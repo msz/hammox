@@ -524,6 +524,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "map with overlapping required key types" do
+    test "empty fail" do
+      assert_fail(:foo_map_overlapping_required_types_literal, %{})
+    end
+
+    test "one key fulfilling both pass" do
+      assert_pass(:foo_map_overlapping_required_types_literal, %{foo: :bar})
+    end
+  end
+
   describe "struct literal" do
     test "fail map" do
       assert_fail(:foo_struct_literal, %{foo: :bar})
