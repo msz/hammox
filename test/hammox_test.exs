@@ -993,6 +993,11 @@ defmodule HammoxTest do
         fn -> TestMock.foo_named_and_unnamed_arg(:bar, "baz") end
       )
     end
+
+    test "remote type arg pass" do
+      TestMock |> expect(:foo_remote_type_arg, fn _ -> :ok end)
+      assert :ok == TestMock.foo_remote_type_arg([])
+    end
   end
 
   describe "fetch_typespec_for_mock/3" do

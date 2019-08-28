@@ -301,6 +301,7 @@ defmodule Hammox do
     case Enum.at(arg_typespecs, arg_index) do
       {:ann_type, _, [{:var, _, arg_name}, arg_type]} -> {arg_name, arg_type}
       {:type, _, _, _} = arg_type -> {nil, arg_type}
+      {:remote_type, _, _} = arg_type -> {nil, arg_type}
     end
   end
 
