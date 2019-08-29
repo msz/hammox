@@ -21,6 +21,12 @@ defmodule Hammox do
        human_reason(reason)}
     end
 
+    defp human_reason({:tuple_elem_type_mismatch, index, elem, elem_type, reason}) do
+      {"#{Ordinal.ordinalize(index + 1)} tuple element #{inspect(elem)} does not match #{
+         Ordinal.ordinalize(index + 1)
+       } element type #{type_to_string(elem_type)}.", human_reason(reason)}
+    end
+
     defp human_reason({:elem_type_mismatch, index, elem, elem_type, reason}) do
       {"Element #{inspect(elem)} at index #{index} does not match element type #{
          type_to_string(elem_type)
@@ -416,8 +422,11 @@ defmodule Hammox do
       |> Enum.zip()
       |> Enum.find_value(fn {elem, elem_type, index} ->
         case match_type(elem, elem_type) do
-          :ok -> nil
-          {:error, reason} -> {:error, {:elem_type_mismatch, index, elem, elem_type, reason}}
+          :ok ->
+            nil
+
+          {:error, reason} ->
+            {:error, {:tuple_elem_type_mismatch, index, elem, elem_type, reason}}
         end
       end)
 
