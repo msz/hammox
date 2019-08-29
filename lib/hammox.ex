@@ -3,34 +3,32 @@ defmodule Hammox do
     defexception [:message]
 
     @impl true
-    def exception({:error, reason}) do
+    def exception({:error, reasons}) do
       %__MODULE__{
-        message: "\n" <> message_string(reason)
+        message: "\n" <> message_string(reasons)
       }
     end
 
-    defp human_reason({:arg_type_mismatch, name, index, value, type, reason}) do
-      {"#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{
-         Ordinal.ordinalize(index + 1)
-       } parameter#{if name, do: " \"" <> to_string(name) <> "\""}'s type #{type_to_string(type)}.",
-       human_reason(reason)}
+    defp human_reason({:arg_type_mismatch, name, index, value, type}) do
+      "#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{
+        Ordinal.ordinalize(index + 1)
+      } parameter#{if name, do: " \"" <> to_string(name) <> "\""}'s type #{type_to_string(type)}."
     end
 
-    defp human_reason({:return_type_mismatch, value, type, reason}) do
-      {"Returned value #{inspect(value)} does not match type #{type_to_string(type)}.",
-       human_reason(reason)}
+    defp human_reason({:return_type_mismatch, value, type}) do
+      "Returned value #{inspect(value)} does not match type #{type_to_string(type)}."
     end
 
-    defp human_reason({:tuple_elem_type_mismatch, index, elem, elem_type, reason}) do
-      {"#{Ordinal.ordinalize(index + 1)} tuple element #{inspect(elem)} does not match #{
-         Ordinal.ordinalize(index + 1)
-       } element type #{type_to_string(elem_type)}.", human_reason(reason)}
+    defp human_reason({:tuple_elem_type_mismatch, index, elem, elem_type}) do
+      "#{Ordinal.ordinalize(index + 1)} tuple element #{inspect(elem)} does not match #{
+        Ordinal.ordinalize(index + 1)
+      } element type #{type_to_string(elem_type)}."
     end
 
-    defp human_reason({:elem_type_mismatch, index, elem, elem_type, reason}) do
-      {"Element #{inspect(elem)} at index #{index} does not match element type #{
-         type_to_string(elem_type)
-       }.", human_reason(reason)}
+    defp human_reason({:elem_type_mismatch, index, elem, elem_type}) do
+      "Element #{inspect(elem)} at index #{index} does not match element type #{
+        type_to_string(elem_type)
+      }."
     end
 
     defp human_reason({:empty_list_type_mismatch, type}) do
@@ -45,12 +43,10 @@ defmodule Hammox do
       "Got an improper list but expected #{type_to_string(type)}."
     end
 
-    defp human_reason(
-           {:improper_list_terminator_type_mismatch, terminator, terminator_type, reason}
-         ) do
-      {"Improper list terminator #{inspect(terminator)} does not match terminator type #{
-         type_to_string(terminator_type)
-       }.", human_reason(reason)}
+    defp human_reason({:improper_list_terminator_type_mismatch, terminator, terminator_type}) do
+      "Improper list terminator #{inspect(terminator)} does not match terminator type #{
+        type_to_string(terminator_type)
+      }."
     end
 
     defp human_reason({:function_arity_type_mismatch, expected, actual}) do
@@ -61,16 +57,7 @@ defmodule Hammox do
       "Value #{inspect(value)} does not match type #{type_to_string(type)}."
     end
 
-    defp human_reason({:map_entry_type_mismatch, value, _entry_types}) do
-      "Entry #{inspect(value)} does not match any of the map entry types."
-    end
-
-    defp human_reason({:map_key_type_mismatch, key, key_type, key_reason}) do
-      {"Map key #{inspect(key)} does not match map key type #{type_to_string(key_type)}.",
-       human_reason(key_reason)}
-    end
-
-    defp human_reason({:map_key_type_mismatch, key, key_types}) do
+    defp human_reason({:map_key_type_mismatch, key, key_types}) when is_list(key_types) do
       "Map key #{inspect(key)} does not match any of the allowed map key types #{
         key_types
         |> Enum.map(&type_to_string/1)
@@ -78,17 +65,22 @@ defmodule Hammox do
       }."
     end
 
-    defp human_reason({:map_value_type_mismatch, key, value, value_type, value_reason}) do
-      {"Map value #{inspect(value)} for key #{inspect(key)} does not match map value type #{
-         type_to_string(value_type)
-       }.", human_reason(value_reason)}
+    defp human_reason({:map_key_type_mismatch, key, key_type}) do
+      "Map key #{inspect(key)} does not match map key type #{type_to_string(key_type)}."
     end
 
-    defp human_reason({:map_value_type_mismatch, key, value, value_types}) do
+    defp human_reason({:map_value_type_mismatch, key, value, value_types})
+         when is_list(value_types) do
       "Map value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed map value types #{
         value_types
         |> Enum.map(&type_to_string/1)
         |> Enum.join(", ")
+      }."
+    end
+
+    defp human_reason({:map_value_type_mismatch, key, value, value_type}) do
+      "Map value #{inspect(value)} for key #{inspect(key)} does not match map value type #{
+        type_to_string(value_type)
       }."
     end
 
@@ -108,22 +100,28 @@ defmodule Hammox do
       "Could not find type #{type_name}/#{arity} in #{strip_elixir(module_name)}."
     end
 
-    defp message_string(reason) do
-      message_string(human_reason(reason), 0)
+    defp message_string(reasons) when is_list(reasons) do
+      reasons
+      |> Enum.zip(0..length(reasons))
+      |> Enum.map(fn {reason, index} ->
+        reason
+        |> human_reason()
+        |> leftpad(index)
+      end)
+      |> Enum.join("\n")
     end
 
-    defp message_string({reason, nested_reason}, level) when is_binary(reason) do
-      leftpadding(level) <> reason <> "\n" <> message_string(nested_reason, level + 1)
+    defp message_string(reason) when is_tuple(reason) do
+      message_string([reason])
     end
 
-    defp message_string(reason, level) when is_binary(reason) do
-      leftpadding(level) <> reason
-    end
+    defp leftpad(string, level) do
+      padding =
+        for(_ <- 0..level, do: "  ")
+        |> Enum.drop(1)
+        |> Enum.join()
 
-    defp leftpadding(level) do
-      for(_ <- 0..level, do: "  ")
-      |> Enum.drop(1)
-      |> Enum.join()
+      padding <> string
     end
 
     defp type_to_string({:type, _, :map_field_exact, [type1, type2]}) do
@@ -282,9 +280,9 @@ defmodule Hammox do
       {arg_name, arg_type} = arg_typespec(typespec, index)
 
       case match_type(arg, arg_type) do
-        {:error, reason} ->
+        {:error, reasons} ->
           raise TypeMatchError,
-                {:error, {:arg_type_mismatch, arg_name, index, arg, arg_type, reason}}
+                {:error, [{:arg_type_mismatch, arg_name, index, arg, arg_type} | reasons]}
 
         :ok ->
           nil
@@ -300,9 +298,9 @@ defmodule Hammox do
     {:type, _, :fun, [_, return_type]} = typespec
 
     case match_type(return_value, return_type) do
-      {:error, reason} ->
+      {:error, reasons} ->
         raise TypeMatchError,
-              {:error, {:return_type_mismatch, return_value, return_type, reason}}
+              {:error, [{:return_type_mismatch, return_value, return_type} | reasons]}
 
       :ok ->
         nil
@@ -425,8 +423,8 @@ defmodule Hammox do
           :ok ->
             nil
 
-          {:error, reason} ->
-            {:error, {:tuple_elem_type_mismatch, index, elem, elem_type, reason}}
+          {:error, reasons} ->
+            {:error, [{:tuple_elem_type_mismatch, index, elem, elem_type} | reasons]}
         end
       end)
 
@@ -505,11 +503,11 @@ defmodule Hammox do
   end
 
   def match_type([], {:type, _, :nonempty_list, [_]} = type) do
-    {:error, {:empty_list_type_mismatch, type}}
+    {:error, [{:empty_list_type_mismatch, type}]}
   end
 
   def match_type([_a | b], {:type, _, :nonempty_list, [_]} = type) when not is_list(b) do
-    {:error, {:improper_list_type_mismatch, type}}
+    {:error, [{:improper_list_type_mismatch, type}]}
   end
 
   def match_type(value, {:type, _, :nonempty_list, [elem_typespec]}) when is_list(value) do
@@ -518,8 +516,8 @@ defmodule Hammox do
       |> Enum.zip(0..length(value))
       |> Enum.find_value(fn {elem, index} ->
         case match_type(elem, elem_typespec) do
-          {:error, reason} ->
-            {:error, {:elem_type_mismatch, index, elem, elem_typespec, reason}}
+          {:error, reasons} ->
+            {:error, [{:elem_type_mismatch, index, elem, elem_typespec} | reasons]}
 
           :ok ->
             nil
@@ -542,11 +540,11 @@ defmodule Hammox do
   end
 
   def match_type([], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
-    {:error, {:empty_list_type_mismatch, type}}
+    {:error, [{:empty_list_type_mismatch, type}]}
   end
 
   def match_type([_ | []], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
-    {:error, {:proper_list_type_mismatch, type}}
+    {:error, [{:proper_list_type_mismatch, type}]}
   end
 
   def match_type(list, {:type, _, :nonempty_improper_list, [_type1, _type2]} = type)
@@ -604,7 +602,7 @@ defmodule Hammox do
     if expected == actual do
       :ok
     else
-      {:error, {:function_arity_type_mismatch, expected, actual}}
+      {:error, [{:function_arity_type_mismatch, expected, actual}]}
     end
   end
 
@@ -663,7 +661,7 @@ defmodule Hammox do
         match_type(Map.from_struct(value), {:type, 0, :map, rest_field_types})
 
       [{:type, _, :map_field_exact, [{:atom, _, :__struct__}, {:atom, _, other_struct_name}]}] ->
-        {:error, {:struct_name_type_mismatch, struct_name, other_struct_name}}
+        {:error, [{:struct_name_type_mismatch, struct_name, other_struct_name}]}
     end
   end
 
@@ -711,34 +709,40 @@ defmodule Hammox do
               case key_hits do
                 [] ->
                   types_and_reasons =
-                    Enum.map(entry_match_results, fn {{_, {key_type, _}}, {:error, key_reason}, _} ->
-                      {key_type, key_reason}
+                    Enum.map(entry_match_results, fn {{_, {key_type, _}}, {:error, key_reasons},
+                                                      _} ->
+                      {key_type, key_reasons}
                     end)
 
                   case types_and_reasons do
-                    [{key_type, key_reason}] ->
-                      {:error, {:map_key_type_mismatch, key, key_type, key_reason}}
+                    [{key_type, key_reasons}] ->
+                      {:error, [{:map_key_type_mismatch, key, key_type} | key_reasons]}
 
                     [_ | _] ->
                       {:error,
-                       {:map_key_type_mismatch, key,
-                        Enum.map(types_and_reasons, fn {key_type, _} -> key_type end)}}
+                       [
+                         {:map_key_type_mismatch, key,
+                          Enum.map(types_and_reasons, fn {key_type, _} -> key_type end)}
+                       ]}
                   end
 
                 [_ | _] ->
                   types_and_reasons =
-                    Enum.map(key_hits, fn {{_, {_, value_type}}, _, {:error, value_reason}} ->
-                      {value_type, value_reason}
+                    Enum.map(key_hits, fn {{_, {_, value_type}}, _, {:error, value_reasons}} ->
+                      {value_type, value_reasons}
                     end)
 
                   case types_and_reasons do
-                    [{value_type, value_reason}] ->
-                      {:error, {:map_value_type_mismatch, key, value, value_type, value_reason}}
+                    [{value_type, value_reasons}] ->
+                      {:error,
+                       [{:map_value_type_mismatch, key, value, value_type} | value_reasons]}
 
                     [_ | _] ->
                       {:error,
-                       {:map_value_type_mismatch, key, value,
-                        Enum.map(types_and_reasons, fn {_, value_type} -> value_type end)}}
+                       [
+                         {:map_value_type_mismatch, key, value,
+                          Enum.map(types_and_reasons, fn {_, value_type} -> value_type end)}
+                       ]}
                   end
               end
           end
@@ -778,12 +782,14 @@ defmodule Hammox do
 
         case unfulfilled_type do
           {{_, {{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}}, _} ->
-            {:error, {:struct_name_type_mismatch, expected_struct_name}}
+            {:error, [{:struct_name_type_mismatch, expected_struct_name}]}
 
           {{_, {key_type, value_type}}, _} ->
             {:error,
-             {:required_field_unfulfilled_map_type_mismatch,
-              {:type, 0, :map_field_exact, [key_type, value_type]}}}
+             [
+               {:required_field_unfulfilled_map_type_mismatch,
+                {:type, 0, :map_field_exact, [key_type, value_type]}}
+             ]}
 
           nil ->
             :ok
@@ -942,6 +948,8 @@ defmodule Hammox do
       ) do
     with {:ok, remote_type} <- resolve_remote_type(type) do
       match_type(value, remote_type)
+    else
+      {:error, reason} -> {:error, [reason]}
     end
   end
 
@@ -1005,7 +1013,7 @@ defmodule Hammox do
     elem_error =
       case match_type(elem, type1) do
         :ok -> nil
-        {:error, reason} -> {:error, {:elem_type_mismatch, index, elem, type1, reason}}
+        {:error, reasons} -> {:error, [{:elem_type_mismatch, index, elem, type1} | reasons]}
       end
 
     if elem_error do
@@ -1023,7 +1031,7 @@ defmodule Hammox do
     elem_error =
       case match_type(elem, type1) do
         :ok -> nil
-        {:error, reason} -> {:error, {:elem_type_mismatch, index, elem, type1, reason}}
+        {:error, reasons} -> {:error, [{:elem_type_mismatch, index, elem, type1} | reasons]}
       end
 
     terminator_error =
@@ -1031,14 +1039,14 @@ defmodule Hammox do
         :ok ->
           nil
 
-        {:error, reason} ->
-          {:error, {:improper_list_terminator_type_mismatch, terminator, type2, reason}}
+        {:error, reasons} ->
+          {:error, [{:improper_list_terminator_type_mismatch, terminator, type2} | reasons]}
       end
 
     elem_error || terminator_error || :ok
   end
 
   defp type_mismatch(value, type) do
-    {:error, {:type_mismatch, value, type}}
+    {:error, [{:type_mismatch, value, type}]}
   end
 end
