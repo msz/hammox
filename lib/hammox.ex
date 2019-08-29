@@ -66,12 +66,12 @@ defmodule Hammox do
     end
 
     defp human_reason({:map_key_type_mismatch, key, [{key_type, key_reason}]}) do
-      {"Key #{inspect(key)} does not match key type #{type_to_string(key_type)}.",
+      {"Map key #{inspect(key)} does not match map key type #{type_to_string(key_type)}.",
        human_reason(key_reason)}
     end
 
     defp human_reason({:map_key_type_mismatch, key, types_and_reasons}) do
-      "Key #{inspect(key)} does not match any of the allowed key types #{
+      "Map key #{inspect(key)} does not match any of the allowed map key types #{
         types_and_reasons
         |> Enum.map(fn {key_type, _} -> type_to_string(key_type) end)
         |> Enum.join(", ")
@@ -79,13 +79,13 @@ defmodule Hammox do
     end
 
     defp human_reason({:map_value_type_mismatch, key, value, [{value_type, value_reason}]}) do
-      {"Value #{inspect(value)} for key #{inspect(key)} does not match value type #{
+      {"Map value #{inspect(value)} for key #{inspect(key)} does not match map value type #{
          type_to_string(value_type)
        }.", human_reason(value_reason)}
     end
 
     defp human_reason({:map_value_type_mismatch, key, value, types_and_reasons}) do
-      "Value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed value types #{
+      "Map value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed map value types #{
         types_and_reasons
         |> Enum.map(fn {value_type, _} -> type_to_string(value_type) end)
         |> Enum.join(", ")
