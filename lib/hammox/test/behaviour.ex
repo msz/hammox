@@ -91,4 +91,5 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_remote_type_arg(Hammox.Test.Struct.my_list()) :: :ok
 
   @callback foo_union() :: :a | :b
+  @callback foo_uneven_union() :: :a | %{a: 1}
 end

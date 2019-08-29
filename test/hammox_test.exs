@@ -27,6 +27,10 @@ defmodule HammoxTest do
     test "fail" do
       assert_fail(:foo_union, :c)
     end
+
+    test "provides deepest stacktrace" do
+      assert_fail(:foo_uneven_union, %{a: "a"}, ~r/Map value/)
+    end
   end
 
   describe "any()" do
@@ -1028,6 +1032,14 @@ defmodule HammoxTest do
   defp assert_fail(function_name, value) do
     TestMock |> expect(function_name, fn -> value end)
     assert_raise(Hammox.TypeMatchError, fn -> apply(TestMock, function_name, []) end)
+  end
+
+  defp assert_fail(function_name, value, expected_message) do
+    TestMock |> expect(function_name, fn -> value end)
+
+    assert_raise(Hammox.TypeMatchError, expected_message, fn ->
+      apply(TestMock, function_name, [])
+    end)
   end
 
   describe "resolve_remote_type/1" do

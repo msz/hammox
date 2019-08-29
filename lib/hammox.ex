@@ -338,12 +338,25 @@ defmodule Hammox do
   end
 
   def match_type(value, {:type, _, :union, union_types} = union) when is_list(union_types) do
-    is_ok =
-      union_types
-      |> Enum.map(fn type -> match_type(value, type) end)
-      |> Enum.any?(fn result -> result == :ok end)
+    results =
+      Enum.reduce_while(union_types, [], fn type, reason_stacks ->
+        case match_type(value, type) do
+          :ok -> {:halt, :ok}
+          {:error, reasons} -> {:cont, [reasons | reason_stacks]}
+        end
+      end)
 
-    if is_ok, do: :ok, else: type_mismatch(value, union)
+    case results do
+      :ok ->
+        :ok
+
+      reason_stacks ->
+        {:error,
+         [
+           {:type_mismatch, value, union}
+           | Enum.max_by(reason_stacks, &length/1)
+         ]}
+    end
   end
 
   def match_type(_value, {:type, _, :any, []}) do
