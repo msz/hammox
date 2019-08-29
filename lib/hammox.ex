@@ -65,29 +65,29 @@ defmodule Hammox do
       "Entry #{inspect(value)} does not match any of the map entry types."
     end
 
-    defp human_reason({:map_key_type_mismatch, key, [{key_type, key_reason}]}) do
+    defp human_reason({:map_key_type_mismatch, key, key_type, key_reason}) do
       {"Map key #{inspect(key)} does not match map key type #{type_to_string(key_type)}.",
        human_reason(key_reason)}
     end
 
-    defp human_reason({:map_key_type_mismatch, key, types_and_reasons}) do
+    defp human_reason({:map_key_type_mismatch, key, key_types}) do
       "Map key #{inspect(key)} does not match any of the allowed map key types #{
-        types_and_reasons
-        |> Enum.map(fn {key_type, _} -> type_to_string(key_type) end)
+        key_types
+        |> Enum.map(&type_to_string/1)
         |> Enum.join(", ")
       }."
     end
 
-    defp human_reason({:map_value_type_mismatch, key, value, [{value_type, value_reason}]}) do
+    defp human_reason({:map_value_type_mismatch, key, value, value_type, value_reason}) do
       {"Map value #{inspect(value)} for key #{inspect(key)} does not match map value type #{
          type_to_string(value_type)
        }.", human_reason(value_reason)}
     end
 
-    defp human_reason({:map_value_type_mismatch, key, value, types_and_reasons}) do
+    defp human_reason({:map_value_type_mismatch, key, value, value_types}) do
       "Map value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed map value types #{
-        types_and_reasons
-        |> Enum.map(fn {value_type, _} -> type_to_string(value_type) end)
+        value_types
+        |> Enum.map(&type_to_string/1)
         |> Enum.join(", ")
       }."
     end
@@ -710,18 +710,36 @@ defmodule Hammox do
 
               case key_hits do
                 [] ->
-                  {:error,
-                   {:map_key_type_mismatch, key,
+                  types_and_reasons =
                     Enum.map(entry_match_results, fn {{_, {key_type, _}}, {:error, key_reason}, _} ->
                       {key_type, key_reason}
-                    end)}}
+                    end)
+
+                  case types_and_reasons do
+                    [{key_type, key_reason}] ->
+                      {:error, {:map_key_type_mismatch, key, key_type, key_reason}}
+
+                    [_ | _] ->
+                      {:error,
+                       {:map_key_type_mismatch, key,
+                        Enum.map(types_and_reasons, fn {key_type, _} -> key_type end)}}
+                  end
 
                 [_ | _] ->
-                  {:error,
-                   {:map_value_type_mismatch, key, value,
+                  types_and_reasons =
                     Enum.map(key_hits, fn {{_, {_, value_type}}, _, {:error, value_reason}} ->
                       {value_type, value_reason}
-                    end)}}
+                    end)
+
+                  case types_and_reasons do
+                    [{value_type, value_reason}] ->
+                      {:error, {:map_value_type_mismatch, key, value, value_type, value_reason}}
+
+                    [_ | _] ->
+                      {:error,
+                       {:map_value_type_mismatch, key, value,
+                        Enum.map(types_and_reasons, fn {_, value_type} -> value_type end)}}
+                  end
               end
           end
 
