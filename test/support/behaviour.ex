@@ -90,6 +90,8 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_named_and_unnamed_arg(atom(), arg2 :: number()) :: :ok
   @callback foo_remote_type_arg(Hammox.Test.Struct.my_list()) :: :ok
 
+  @callback foo_user_type() :: Hammox.Test.Struct.my_type_user()
+
   @callback foo_union() :: :a | :b
   @callback foo_uneven_union() :: :a | %{a: 1}
 end

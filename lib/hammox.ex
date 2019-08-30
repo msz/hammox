@@ -979,7 +979,7 @@ defmodule Hammox do
           fill_type_var(resolved_type, var, arg)
         end)
 
-      {:ok, resolved_type}
+      {:ok, replace_user_types(resolved_type, types)}
     else
       {:error, {:module_fetch_failure, _}} = error ->
         error
@@ -998,6 +998,28 @@ defmodule Hammox do
   end
 
   defp fill_type_var(type, _var, _arg) do
+    type
+  end
+
+  defp replace_user_types({:user_type, _position, name, args}, user_types) do
+    with {:ok, {:type, {_name, type, vars}}} <- get_type(user_types, name, length(args)) do
+      resolved_type =
+        args
+        |> Enum.zip(vars)
+        |> Enum.reduce(type, fn {arg, var}, resolved_type ->
+          fill_type_var(resolved_type, var, arg)
+        end)
+
+      replace_user_types(resolved_type, user_types)
+    end
+  end
+
+  defp replace_user_types({:type, position, name, params}, user_types) when is_list(params) do
+    {:type, position, name,
+     Enum.map(params, fn param -> replace_user_types(param, user_types) end)}
+  end
+
+  defp replace_user_types(type, _user_types) do
     type
   end
 
