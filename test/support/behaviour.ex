@@ -83,6 +83,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_remote_type_with_arg :: Hammox.Test.Struct.my_list(number())
   @callback foo_nonexistent_remote_module :: Hammox.Test.NonexistentStruct.my_list()
   @callback foo_nonexistent_remote_type :: Hammox.Test.Struct.nonexistent_type()
+  @callback foo_protocol_remote_type :: Enumerable.t()
 
   @callback foo_no_arg() :: :ok
   @callback foo_unnamed_arg(atom()) :: :ok

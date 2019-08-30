@@ -100,6 +100,10 @@ defmodule Hammox do
       "Could not find type #{type_name}/#{arity} in #{strip_elixir(module_name)}."
     end
 
+    defp human_reason({:protocol_type_mismatch, value, protocol_name}) do
+      "Value #{inspect(value)} does not implement the #{protocol_name} protocol."
+    end
+
     defp message_string(reasons) when is_list(reasons) do
       reasons
       |> Enum.zip(0..length(reasons))
@@ -959,11 +963,31 @@ defmodule Hammox do
         value,
         {:remote_type, _, _} = type
       ) do
-    with {:ok, remote_type} <- resolve_remote_type(type) do
+    with :ok <- maybe_match_protocol(value, type),
+         {:ok, remote_type} <- resolve_remote_type(type) do
       match_type(value, remote_type)
     else
       {:error, reason} -> {:error, [reason]}
     end
+  end
+
+  def maybe_match_protocol(
+        value,
+        {:remote_type, _, [{:atom, _, module_name}, {:atom, _, :t}, []]}
+      ) do
+    if function_exported?(module_name, :__protocol__, 1) and
+         function_exported?(module_name, :impl_for, 1) do
+      case apply(module_name, :impl_for, [value]) do
+        nil -> {:error, {:protocol_type_mismatch, value, module_name}}
+        _ -> :ok
+      end
+    else
+      :ok
+    end
+  end
+
+  def maybe_match_protocol(_value, _type) do
+    :ok
   end
 
   def resolve_remote_type(

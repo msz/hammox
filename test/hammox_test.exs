@@ -957,6 +957,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "protocol remote type" do
+    test "pass" do
+      assert_pass(:foo_protocol_remote_type, [])
+    end
+
+    test "fail" do
+      assert_fail(:foo_protocol_remote_type, :a)
+    end
+  end
+
   describe "user type" do
     test "pass" do
       assert_pass(:foo_user_type, [[:foo_type]])
