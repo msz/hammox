@@ -1003,7 +1003,7 @@ defmodule Hammox do
           fill_type_var(resolved_type, var, arg)
         end)
 
-      {:ok, replace_user_types(resolved_type, types)}
+      {:ok, replace_user_types(resolved_type, module_name)}
     else
       {:error, {:module_fetch_failure, _}} = error ->
         error
@@ -1025,25 +1025,16 @@ defmodule Hammox do
     type
   end
 
-  defp replace_user_types({:user_type, _position, name, args}, user_types) do
-    with {:ok, {:type, {_name, type, vars}}} <- get_type(user_types, name, length(args)) do
-      resolved_type =
-        args
-        |> Enum.zip(vars)
-        |> Enum.reduce(type, fn {arg, var}, resolved_type ->
-          fill_type_var(resolved_type, var, arg)
-        end)
-
-      replace_user_types(resolved_type, user_types)
-    end
+  defp replace_user_types({:user_type, _, name, args}, module_name) do
+    {:remote_type, 0, [{:atom, 0, module_name}, {:atom, 0, name}, args]}
   end
 
-  defp replace_user_types({:type, position, name, params}, user_types) when is_list(params) do
+  defp replace_user_types({:type, position, name, params}, module_name) when is_list(params) do
     {:type, position, name,
-     Enum.map(params, fn param -> replace_user_types(param, user_types) end)}
+     Enum.map(params, fn param -> replace_user_types(param, module_name) end)}
   end
 
-  defp replace_user_types(type, _user_types) do
+  defp replace_user_types(type, _module_name) do
     type
   end
 
