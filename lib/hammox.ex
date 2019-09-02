@@ -316,10 +316,11 @@ defmodule Hammox do
   def fetch_typespec(behaviour_module_name, function_name, arity) do
     {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
 
-    typespec = Enum.find_value(callbacks, fn
-      {{^function_name, ^arity}, [typespec]} -> typespec
-      _ -> nil
-    end)
+    typespec =
+      Enum.find_value(callbacks, fn
+        {{^function_name, ^arity}, [typespec]} -> typespec
+        _ -> nil
+      end)
 
     replace_user_types(typespec, behaviour_module_name)
   end
@@ -1015,29 +1016,49 @@ defmodule Hammox do
     end
   end
 
-  defp fill_type_var(type, var, arg) when type == var do
-    arg
+  defp fill_type_var(type, var, arg) do
+    type_map(type, fn
+      ^var -> arg
+      other -> other
+    end)
   end
 
-  defp fill_type_var({:type, position, name, params}, var, arg) when is_list(params) do
-    {:type, position, name, Enum.map(params, fn param -> fill_type_var(param, var, arg) end)}
+  defp replace_user_types(type, module_name) do
+    type_map(type, fn
+      {:user_type, _, name, args} ->
+        {:remote_type, 0, [{:atom, 0, module_name}, {:atom, 0, name}, args]}
+
+      other ->
+        other
+    end)
   end
 
-  defp fill_type_var(type, _var, _arg) do
-    type
-  end
+  defp type_map(type, map_fun) do
+    case map_fun.(type) do
+      {:type, position, name, params} when is_list(params) ->
+        {:type, position, name, Enum.map(params, fn param -> type_map(param, map_fun) end)}
 
-  defp replace_user_types({:user_type, _, name, args}, module_name) do
-    {:remote_type, 0, [{:atom, 0, module_name}, {:atom, 0, name}, args]}
-  end
+      {:ann_type, position, [var, ann_type]} ->
+        {:ann_type, position, [var, type_map(ann_type, map_fun)]}
 
-  defp replace_user_types({:type, position, name, params}, module_name) when is_list(params) do
-    {:type, position, name,
-     Enum.map(params, fn param -> replace_user_types(param, module_name) end)}
-  end
+      {:type, _, _, _} = result_type ->
+        result_type
 
-  defp replace_user_types(type, _module_name) do
-    type
+      {:type, _, _} = result_type ->
+        result_type
+
+      {:atom, _, _} = atom ->
+        atom
+
+      {:integer, _, _} = integer ->
+        integer
+
+      {:remote_type, _, _} = remote_type ->
+        remote_type
+
+      {:user_type, _, _, _} = user_type ->
+        user_type
+    end
   end
 
   defp fetch_types(module_name) do

@@ -987,6 +987,22 @@ defmodule HammoxTest do
     end
   end
 
+  describe "user type as annotated param" do
+    test "pass" do
+      TestMock |> expect(:foo_ann_type_user_type, fn _ -> :ok end)
+      assert :ok == TestMock.foo_ann_type_user_type(:foo_type)
+    end
+
+    test "fail" do
+      TestMock |> expect(:foo_ann_type_user_type, fn _ -> :ok end)
+
+      assert_raise(
+        Hammox.TypeMatchError,
+        fn -> TestMock.foo_ann_type_user_type(:other_type) end
+      )
+    end
+  end
+
   describe "arg type checking" do
     test "no args pass" do
       TestMock |> expect(:foo_no_arg, fn -> :ok end)
