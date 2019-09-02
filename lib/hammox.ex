@@ -316,10 +316,12 @@ defmodule Hammox do
   def fetch_typespec(behaviour_module_name, function_name, arity) do
     {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
 
-    Enum.find_value(callbacks, fn
+    typespec = Enum.find_value(callbacks, fn
       {{^function_name, ^arity}, [typespec]} -> typespec
       _ -> nil
     end)
+
+    replace_user_types(typespec, behaviour_module_name)
   end
 
   def fetch_typespec_for_mock(mock_name, function_name, arity)

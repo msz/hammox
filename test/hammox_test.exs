@@ -977,6 +977,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "user type defined in behaviour" do
+    test "pass" do
+      assert_pass(:foo_behaviour_user_type, :foo_type)
+    end
+
+    test "fail" do
+      assert_fail(:foo_behaviour_user_type, :other_type)
+    end
+  end
+
   describe "arg type checking" do
     test "no args pass" do
       TestMock |> expect(:foo_no_arg, fn -> :ok end)
