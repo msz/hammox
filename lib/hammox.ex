@@ -1041,23 +1041,8 @@ defmodule Hammox do
       {:ann_type, position, [var, ann_type]} ->
         {:ann_type, position, [var, type_map(ann_type, map_fun)]}
 
-      {:type, _, _, _} = result_type ->
-        result_type
-
-      {:type, _, _} = result_type ->
-        result_type
-
-      {:atom, _, _} = atom ->
-        atom
-
-      {:integer, _, _} = integer ->
-        integer
-
-      {:remote_type, _, _} = remote_type ->
-        remote_type
-
-      {:user_type, _, _, _} = user_type ->
-        user_type
+      other ->
+        other
     end
   end
 
