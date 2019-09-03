@@ -358,11 +358,10 @@ defmodule Hammox do
         :ok
 
       reason_stacks ->
-        {:error,
-         [
-           {:type_mismatch, value, union}
-           | Enum.max_by(reason_stacks, &length/1)
-         ]}
+        reason = {:type_mismatch, value, union}
+        biggest_stack = Enum.max_by(reason_stacks, &length/1)
+        reasons = if length(biggest_stack) == 1, do: [reason], else: [reason | biggest_stack]
+        {:error, reasons}
     end
   end
 
