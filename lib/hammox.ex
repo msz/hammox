@@ -217,6 +217,22 @@ defmodule Hammox do
     protected(code, typespec, arity)
   end
 
+  def protect(module_name, behaviour_name, funs)
+      when is_atom(module_name) and is_atom(behaviour_name) and is_list(funs) do
+    funs
+    |> Enum.map(fn {function_name, arity} ->
+      key =
+        function_name
+        |> Atom.to_string()
+        |> Kernel.<>("_#{arity}")
+        |> String.to_atom()
+
+      value = protect({module_name, function_name, arity}, behaviour_name)
+      {key, value}
+    end)
+    |> Enum.into(%{})
+  end
+
   defp protected(code, typespec, 0) do
     fn ->
       protected_code(code, typespec, [])

@@ -3,4 +3,8 @@ defmodule Hammox.Test.SmallImplementation do
   def foo() do
     :bar
   end
+
+  def other_foo(_) do
+    1
+  end
 end

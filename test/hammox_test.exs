@@ -15,6 +15,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "protect/3" do
+    test "returns" do
+      assert %{foo_0: _, other_foo_1: _} =
+               Hammox.protect(Hammox.Test.SmallImplementation, Hammox.Test.SmallBehaviour,
+                 foo: 0,
+                 other_foo: 1
+               )
+    end
+  end
+
   describe "union" do
     test "pass first type" do
       assert_pass(:foo_union, :a)
