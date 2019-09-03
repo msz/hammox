@@ -171,7 +171,7 @@ defmodule Hammox do
     hammox_code =
       case fetch_typespec_for_mock(mock, name, arity) do
         nil -> code
-        typespec -> protect(code, typespec, arity)
+        typespec -> protected(code, typespec, arity)
       end
 
     Mox.expect(mock, name, n, hammox_code)
@@ -214,64 +214,64 @@ defmodule Hammox do
              is_atom(behaviour_name) do
     code = {module_name, function_name}
     typespec = fetch_typespec(behaviour_name, function_name, arity)
-    protect(code, typespec, arity)
+    protected(code, typespec, arity)
   end
 
-  def protect(code, typespec, 0) do
+  defp protected(code, typespec, 0) do
     fn ->
       protected_code(code, typespec, [])
     end
   end
 
-  def protect(code, typespec, 1) do
+  defp protected(code, typespec, 1) do
     fn arg1 ->
       protected_code(code, typespec, [arg1])
     end
   end
 
-  def protect(code, typespec, 2) do
+  defp protected(code, typespec, 2) do
     fn arg1, arg2 ->
       protected_code(code, typespec, [arg1, arg2])
     end
   end
 
-  def protect(code, typespec, 3) do
+  defp protected(code, typespec, 3) do
     fn arg1, arg2, arg3 ->
       protected_code(code, typespec, [arg1, arg2, arg3])
     end
   end
 
-  def protect(code, typespec, 4) do
+  defp protected(code, typespec, 4) do
     fn arg1, arg2, arg3, arg4 ->
       protected_code(code, typespec, [arg1, arg2, arg3, arg4])
     end
   end
 
-  def protect(code, typespec, 5) do
+  defp protected(code, typespec, 5) do
     fn arg1, arg2, arg3, arg4, arg5 ->
       protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5])
     end
   end
 
-  def protect(code, typespec, 6) do
+  defp protected(code, typespec, 6) do
     fn arg1, arg2, arg3, arg4, arg5, arg6 ->
       protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6])
     end
   end
 
-  def protect(code, typespec, 7) do
+  defp protected(code, typespec, 7) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7 ->
       protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
     end
   end
 
-  def protect(code, typespec, 8) do
+  defp protected(code, typespec, 8) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ->
       protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
     end
   end
 
-  def protect(code, typespec, 9) do
+  defp protected(code, typespec, 9) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 ->
       protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
     end
