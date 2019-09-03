@@ -16,11 +16,18 @@ defmodule HammoxTest do
   end
 
   describe "protect/3" do
-    test "returns" do
+    test "returns setup_all friendly map" do
       assert %{foo_0: _, other_foo_1: _} =
                Hammox.protect(Hammox.Test.SmallImplementation, Hammox.Test.SmallBehaviour,
                  foo: 0,
                  other_foo: 1
+               )
+    end
+
+    test "works with arity arrays" do
+      assert %{other_foo_0: _, other_foo_1: _} =
+               Hammox.protect(Hammox.Test.SmallImplementation, Hammox.Test.SmallBehaviour,
+                 other_foo: [0, 1]
                )
     end
   end

@@ -220,16 +220,23 @@ defmodule Hammox do
   def protect(module_name, behaviour_name, funs)
       when is_atom(module_name) and is_atom(behaviour_name) and is_list(funs) do
     funs
-    |> Enum.map(fn {function_name, arity} ->
-      key =
-        function_name
-        |> Atom.to_string()
-        |> Kernel.<>("_#{arity}")
-        |> String.to_atom()
-
-      value = protect({module_name, function_name, arity}, behaviour_name)
-      {key, value}
+    |> Enum.map(fn
+      {function_name, arity} when is_integer(arity) -> {function_name, [arity]}
+      {function_name, arities} when is_list(arities) -> {function_name, arities}
     end)
+    |> Enum.map(fn {function_name, arities} ->
+      Enum.map(arities, fn arity ->
+        key =
+          function_name
+          |> Atom.to_string()
+          |> Kernel.<>("_#{arity}")
+          |> String.to_atom()
+
+        value = protect({module_name, function_name, arity}, behaviour_name)
+        {key, value}
+      end)
+    end)
+    |> List.flatten()
     |> Enum.into(%{})
   end
 
