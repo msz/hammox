@@ -13,6 +13,15 @@ defmodule HammoxTest do
       fun = Hammox.protect({Hammox.Test.SmallImplementation, :foo, 0}, Hammox.Test.SmallBehaviour)
       assert_raise(Hammox.TypeMatchError, fn -> fun.() end)
     end
+
+    test "throws when typespec does not exist" do
+      assert_raise(Hammox.TypespecNotFoundError, fn ->
+        Hammox.protect(
+          {Hammox.Test.SmallImplementation, :nonexistent_fuc, 0},
+          Hammox.Test.SmallBehaviour
+        )
+      end)
+    end
   end
 
   describe "protect/3" do

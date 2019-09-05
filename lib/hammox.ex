@@ -89,15 +89,15 @@ defmodule Hammox do
     end
 
     defp human_reason({:struct_name_type_mismatch, expected_struct_name}) do
-      "Expected the value to be #{strip_elixir(expected_struct_name)} struct."
+      "Expected the value to be #{Hammox.module_to_string(expected_struct_name)} struct."
     end
 
     defp human_reason({:module_fetch_failure, module_name}) do
-      "Could not load module #{strip_elixir(module_name)}."
+      "Could not load module #{Hammox.module_to_string(module_name)}."
     end
 
     defp human_reason({:remote_type_fetch_failure, {module_name, type_name, arity}}) do
-      "Could not find type #{type_name}/#{arity} in #{strip_elixir(module_name)}."
+      "Could not find type #{type_name}/#{arity} in #{Hammox.module_to_string(module_name)}."
     end
 
     defp human_reason({:protocol_type_mismatch, value, protocol_name}) do
@@ -147,14 +147,10 @@ defmodule Hammox do
 
       type_string
     end
+  end
 
-    defp strip_elixir(module_name) do
-      module_name
-      |> Atom.to_string()
-      |> String.split(".")
-      |> Enum.drop(1)
-      |> Enum.join(".")
-    end
+  defmodule TypespecNotFoundError do
+    defexception [:message]
   end
 
   def allow(mock, owner_pid, allowed_via) do
@@ -213,8 +209,18 @@ defmodule Hammox do
       when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
              is_atom(behaviour_name) do
     code = {module_name, function_name}
-    typespec = fetch_typespec(behaviour_name, function_name, arity)
-    protected(code, typespec, arity)
+
+    case fetch_typespec(behaviour_name, function_name, arity) do
+      nil ->
+        raise TypespecNotFoundError,
+          message:
+            "Could not find typespec for #{module_to_string(behaviour_name)}.#{function_name}/#{
+              arity
+            }."
+
+      typespec ->
+        protected(code, typespec, arity)
+    end
   end
 
   def protect(module_name, behaviour_name, funs)
@@ -1128,5 +1134,13 @@ defmodule Hammox do
 
   defp type_mismatch(value, type) do
     {:error, [{:type_mismatch, value, type}]}
+  end
+
+  def module_to_string(module_name) do
+    module_name
+    |> Atom.to_string()
+    |> String.split(".")
+    |> Enum.drop(1)
+    |> Enum.join(".")
   end
 end
