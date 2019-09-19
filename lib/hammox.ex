@@ -166,7 +166,11 @@ defmodule Hammox do
 
     hammox_code =
       case fetch_typespec_for_mock(mock, name, arity) do
+        # This is really an error case where we're trying to mock a function
+        # that does not exist in the behaviour. Mox will flag it better though
+        # so just let it pass through.
         nil -> code
+
         typespec -> protected(code, typespec, arity)
       end
 
