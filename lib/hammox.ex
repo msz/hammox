@@ -170,7 +170,6 @@ defmodule Hammox do
         # that does not exist in the behaviour. Mox will flag it better though
         # so just let it pass through.
         nil -> code
-
         typespec -> protected(code, typespec, arity)
       end
 
@@ -214,17 +213,8 @@ defmodule Hammox do
              is_atom(behaviour_name) do
     code = {module_name, function_name}
 
-    case fetch_typespec(behaviour_name, function_name, arity) do
-      nil ->
-        raise TypespecNotFoundError,
-          message:
-            "Could not find typespec for #{module_to_string(behaviour_name)}.#{function_name}/#{
-              arity
-            }."
-
-      typespec ->
-        protected(code, typespec, arity)
-    end
+    typespec = fetch_typespec!(behaviour_name, function_name, arity)
+    protected(code, typespec, arity)
   end
 
   def protect(module_name, behaviour_name, funs)
@@ -344,6 +334,20 @@ defmodule Hammox do
     end
 
     return_value
+  end
+
+  def fetch_typespec!(behaviour_name, function_name, arity) do
+    case fetch_typespec(behaviour_name, function_name, arity) do
+      nil ->
+        raise TypespecNotFoundError,
+          message:
+            "Could not find typespec for #{module_to_string(behaviour_name)}.#{function_name}/#{
+              arity
+            }."
+
+      typespec ->
+        typespec
+    end
   end
 
   def fetch_typespec(behaviour_module_name, function_name, arity) do
