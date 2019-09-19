@@ -799,22 +799,6 @@ defmodule Hammox do
           {:error, _} = error -> {:halt, error}
           entry_hit_map when is_map(entry_hit_map) -> {:cont, entry_hit_map}
         end
-
-        # hit_map_for_entry =
-        #   Enum.reduce(current_hit_map, current_hit_map, fn {{_, {key_type, value_type}} =
-        #                                                       entry_type, hits},
-        #                                                    hit_map_for_entry ->
-        #     case match_type(entry, {:type, 0, :tuple, [key_type, value_type]}) do
-        #       :ok -> Map.put(hit_map_for_entry, entry_type, hits + 1)
-        #       {:error, _} -> hit_map_for_entry
-        #     end
-        #   end)
-
-        # if hit_map_for_entry == current_hit_map do
-        #   {:halt, {:error, {:map_entry_type_mismatch, entry, map_entry_types}}}
-        # else
-        #   {:cont, hit_map_for_entry}
-        # end
       end)
 
     case type_match_result do
