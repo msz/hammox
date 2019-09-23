@@ -1,11 +1,17 @@
 # Hammox
 
-**TODO: Add description**
+Hammox is a library for rigorous unit testing using mocks, explicit
+behaviours and contract tests.
+
+It takes the excellent [Mox](https://github.com/plataformatec/mox) library
+and pushes its philosophy to its limits, providing automatic contract tests
+based on behaviour typespecs while maintaining full compability with code
+already using Mox.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `hammox` to your list of dependencies in `mix.exs`:
+If you are currently using [Mox](https://github.com/plataformatec/mox),
+delete it from your list of dependencies in `mix.exs`. Then add `hammox`:
 
 ```elixir
 def deps do
@@ -15,13 +21,35 @@ def deps do
 end
 ```
 
+## Starting from scratch
+
+Read ["Mocks and explicit contracts"](http://blog.plataformatec.com.br/2015/10/mocks-and-explicit-contracts/)
+by José Valim. Then proceed to the [Mox documentation](https://hexdocs.pm/mox/Mox.html).
+Once you are comfortable with Mox, switch to using Hammox.
+
+## Migrating from Mox
+
+Replace all occurences of `Mox` with `Hammox`. Nothing more is required; all
+your mock calls in test are now ensured to conform to the behaviour typespec.
+
+## Examples
+
+
+## Protocol types
+
+A `t()` type defined on a protocol is taken by Hammox to mean "a struct
+implementing the given protocol". Therefore, trying to pass `:atom` for an
+`Enumerable.t()` will produce an error, even though the type is defined as
+`term()`:
+```
+** (Hammox.TypeMatchError)
+Returned value :atom does not match type Enumerable.t().
+  Value :atom does not implement the Enumerable protocol.
+```
+
 ## Limitations
 - For anonymous function types in typespecs, only the arity is checked.
 Parameter types and return types are not checked.
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/hammox](https://hexdocs.pm/hammox).
 
 ## License
 
