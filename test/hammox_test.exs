@@ -1088,11 +1088,12 @@ defmodule HammoxTest do
 
   describe "fetch_typespec_for_mock/3" do
     test "gets callbacks for TestMock" do
-      assert {:type, _, :fun,
-              [
-                {:type, _, :product, []},
-                {:type, _, :atom, []}
-              ]} = fetch_typespec_for_mock(TestMock, :foo_atom, 0)
+      assert {:ok,
+              {:type, _, :fun,
+               [
+                 {:type, _, :product, []},
+                 {:type, _, :atom, []}
+               ]}} = fetch_typespec_for_mock(TestMock, :foo_atom, 0)
     end
   end
 

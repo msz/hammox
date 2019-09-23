@@ -170,7 +170,7 @@ defmodule Hammox do
         # that does not exist in the behaviour. Mox will flag it better though
         # so just let it pass through.
         nil -> code
-        typespec -> protected(code, typespec, arity)
+        {:ok, typespec} -> protected(code, typespec, arity)
       end
 
     Mox.expect(mock, name, n, hammox_code)
@@ -345,7 +345,7 @@ defmodule Hammox do
               arity
             }."
 
-      typespec ->
+      {:ok, typespec} ->
         typespec
     end
   end
@@ -359,7 +359,10 @@ defmodule Hammox do
         _ -> nil
       end)
 
-    replace_user_types(typespec, behaviour_module_name)
+    case typespec do
+      nil -> nil
+      found -> {:ok, replace_user_types(found, behaviour_module_name)}
+    end
   end
 
   def fetch_typespec_for_mock(mock_name, function_name, arity)
@@ -368,7 +371,10 @@ defmodule Hammox do
     |> Enum.map(fn behaviour ->
       fetch_typespec(behaviour, function_name, arity)
     end)
-    |> Enum.find(fn elem -> elem != nil end)
+    |> Enum.find(fn
+      {:ok, _typespec} -> true
+      _ -> false
+    end)
   end
 
   def arg_typespec(function_typespec, arg_index) do
