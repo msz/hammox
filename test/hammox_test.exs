@@ -1086,14 +1086,32 @@ defmodule HammoxTest do
     end
   end
 
-  describe "fetch_typespec_for_mock/3" do
+  describe "multiple typespec for one function" do
+    test "passes first typespec" do
+      TestMock |> expect(:foo_multiple_typespec, fn _ -> :a end)
+      assert :a == TestMock.foo_multiple_typespec(:a)
+    end
+
+    test "passes second typespec" do
+      TestMock |> expect(:foo_multiple_typespec, fn _ -> :b end)
+      assert :b == TestMock.foo_multiple_typespec(:b)
+    end
+
+    test "fails mix of typespecs" do
+      TestMock |> expect(:foo_multiple_typespec, fn _ -> :b end)
+      assert_raise Hammox.TypeMatchError, fn -> TestMock.foo_multiple_typespec(:a) end
+    end
+  end
+
+  describe "fetch_typespecs_for_mock/3" do
     test "gets callbacks for TestMock" do
-      assert {:ok,
-              {:type, _, :fun,
-               [
-                 {:type, _, :product, []},
-                 {:type, _, :atom, []}
-               ]}} = fetch_typespec_for_mock(TestMock, :foo_atom, 0)
+      [
+        {:type, _, :fun,
+         [
+           {:type, _, :product, []},
+           {:type, _, :atom, []}
+         ]}
+      ] = fetch_typespecs_for_mock(TestMock, :foo_atom, 0)
     end
   end
 

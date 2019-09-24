@@ -165,12 +165,12 @@ defmodule Hammox do
     arity = :erlang.fun_info(code)[:arity]
 
     hammox_code =
-      case fetch_typespec_for_mock(mock, name, arity) do
+      case fetch_typespecs_for_mock(mock, name, arity) do
         # This is really an error case where we're trying to mock a function
         # that does not exist in the behaviour. Mox will flag it better though
         # so just let it pass through.
-        nil -> code
-        {:ok, typespec} -> protected(code, typespec, arity)
+        [] -> code
+        typespecs -> protected(code, typespecs, arity)
       end
 
     Mox.expect(mock, name, n, hammox_code)
@@ -213,8 +213,8 @@ defmodule Hammox do
              is_atom(behaviour_name) do
     code = {module_name, function_name}
 
-    typespec = fetch_typespec!(behaviour_name, function_name, arity)
-    protected(code, typespec, arity)
+    typespecs = fetch_typespecs!(behaviour_name, function_name, arity)
+    protected(code, typespecs, arity)
   end
 
   def protect(module_name, behaviour_name, funs)
@@ -240,141 +240,168 @@ defmodule Hammox do
     |> Enum.into(%{})
   end
 
-  defp protected(code, typespec, 0) do
+  defp protected(code, typespecs, 0) do
     fn ->
-      protected_code(code, typespec, [])
+      protected_code(code, typespecs, [])
     end
   end
 
-  defp protected(code, typespec, 1) do
+  defp protected(code, typespecs, 1) do
     fn arg1 ->
-      protected_code(code, typespec, [arg1])
+      protected_code(code, typespecs, [arg1])
     end
   end
 
-  defp protected(code, typespec, 2) do
+  defp protected(code, typespecs, 2) do
     fn arg1, arg2 ->
-      protected_code(code, typespec, [arg1, arg2])
+      protected_code(code, typespecs, [arg1, arg2])
     end
   end
 
-  defp protected(code, typespec, 3) do
+  defp protected(code, typespecs, 3) do
     fn arg1, arg2, arg3 ->
-      protected_code(code, typespec, [arg1, arg2, arg3])
+      protected_code(code, typespecs, [arg1, arg2, arg3])
     end
   end
 
-  defp protected(code, typespec, 4) do
+  defp protected(code, typespecs, 4) do
     fn arg1, arg2, arg3, arg4 ->
-      protected_code(code, typespec, [arg1, arg2, arg3, arg4])
+      protected_code(code, typespecs, [arg1, arg2, arg3, arg4])
     end
   end
 
-  defp protected(code, typespec, 5) do
+  defp protected(code, typespecs, 5) do
     fn arg1, arg2, arg3, arg4, arg5 ->
-      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5])
+      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5])
     end
   end
 
-  defp protected(code, typespec, 6) do
+  defp protected(code, typespecs, 6) do
     fn arg1, arg2, arg3, arg4, arg5, arg6 ->
-      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6])
+      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6])
     end
   end
 
-  defp protected(code, typespec, 7) do
+  defp protected(code, typespecs, 7) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7 ->
-      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
+      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
     end
   end
 
-  defp protected(code, typespec, 8) do
+  defp protected(code, typespecs, 8) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ->
-      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
+      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
     end
   end
 
-  defp protected(code, typespec, 9) do
+  defp protected(code, typespecs, 9) do
     fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 ->
-      protected_code(code, typespec, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
+      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
     end
   end
 
-  defp protected_code(code, typespec, args) do
-    args
-    |> Enum.zip(0..(length(args) - 1))
-    |> Enum.each(fn {arg, index} ->
-      {arg_name, arg_type} = arg_typespec(typespec, index)
-
-      case match_type(arg, arg_type) do
-        {:error, reasons} ->
-          raise TypeMatchError,
-                {:error, [{:arg_type_mismatch, arg_name, index, arg, arg_type} | reasons]}
-
-        :ok ->
-          nil
-      end
-    end)
-
+  defp protected_code(code, typespecs, args) do
     return_value =
       case code do
         {module_name, function_name} -> apply(module_name, function_name, args)
         anonymous when is_function(anonymous) -> apply(anonymous, args)
       end
 
-    {:type, _, :fun, [_, return_type]} = typespec
-
-    case match_type(return_value, return_type) do
-      {:error, reasons} ->
-        raise TypeMatchError,
-              {:error, [{:return_type_mismatch, return_value, return_type} | reasons]}
-
-      :ok ->
-        nil
-    end
+    check_call(args, return_value, typespecs)
 
     return_value
   end
 
-  def fetch_typespec!(behaviour_name, function_name, arity) do
-    case fetch_typespec(behaviour_name, function_name, arity) do
-      nil ->
+  defp check_call(args, return_value, typespecs) when is_list(typespecs) do
+    typespecs
+    |> Enum.map(fn typespec -> match_call(args, return_value, typespec) end)
+    |> Enum.max_by(fn
+      {:error, reasons} -> length(reasons)
+      :ok -> 9999 # will pick :ok if there is one
+    end)
+    |> case do
+      {:error, _} = error -> raise TypeMatchError, error
+      :ok -> :ok
+    end
+  end
+
+  defp match_call(args, return_value, typespec) do
+    with :ok <- match_args(args, typespec),
+         :ok <- match_return_value(return_value, typespec) do
+      :ok
+    end
+  end
+
+  defp match_args([], _typespec) do
+    :ok
+  end
+
+  defp match_args(args, typespec) do
+    args
+    |> Enum.zip(0..(length(args) - 1))
+    |> Enum.map(fn {arg, index} ->
+      {arg_name, arg_type} = arg_typespec(typespec, index)
+
+      case match_type(arg, arg_type) do
+        {:error, reasons} ->
+          {:error, [{:arg_type_mismatch, arg_name, index, arg, arg_type} | reasons]}
+
+        :ok ->
+          :ok
+      end
+    end)
+    |> Enum.max_by(fn
+      {:error, reasons} -> length(reasons)
+      :ok -> 0
+    end)
+  end
+
+  defp match_return_value(return_value, typespec) do
+    {:type, _, :fun, [_, return_type]} = typespec
+
+    case match_type(return_value, return_type) do
+      {:error, reasons} ->
+        {:error, [{:return_type_mismatch, return_value, return_type} | reasons]}
+
+      :ok ->
+        :ok
+    end
+  end
+
+  def fetch_typespecs!(behaviour_name, function_name, arity) do
+    case fetch_typespecs(behaviour_name, function_name, arity) do
+      [] ->
         raise TypespecNotFoundError,
           message:
             "Could not find typespec for #{module_to_string(behaviour_name)}.#{function_name}/#{
               arity
             }."
 
-      {:ok, typespec} ->
-        typespec
+      typespecs ->
+        typespecs
     end
   end
 
-  def fetch_typespec(behaviour_module_name, function_name, arity) do
+  def fetch_typespecs(behaviour_module_name, function_name, arity) do
     {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
 
-    typespec =
-      Enum.find_value(callbacks, fn
-        {{^function_name, ^arity}, [typespec]} -> typespec
-        _ -> nil
-      end)
-
-    case typespec do
-      nil -> nil
-      found -> {:ok, replace_user_types(found, behaviour_module_name)}
-    end
+    callbacks
+    |> Enum.find_value([], fn
+      {{^function_name, ^arity}, typespecs} -> typespecs
+      _ -> false
+    end)
+    |> Enum.map(fn typespec ->
+      replace_user_types(typespec, behaviour_module_name)
+    end)
   end
 
-  def fetch_typespec_for_mock(mock_name, function_name, arity)
+  def fetch_typespecs_for_mock(mock_name, function_name, arity)
       when is_atom(mock_name) and is_atom(function_name) and is_integer(arity) do
     mock_name.__mock_for__()
     |> Enum.map(fn behaviour ->
-      fetch_typespec(behaviour, function_name, arity)
+      fetch_typespecs(behaviour, function_name, arity)
     end)
-    |> Enum.find(fn
-      {:ok, _typespec} -> true
-      _ -> false
-    end)
+    |> List.flatten()
   end
 
   def arg_typespec(function_typespec, arg_index) do

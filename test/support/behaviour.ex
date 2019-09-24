@@ -98,4 +98,7 @@ defmodule Hammox.Test.Behaviour do
 
   @callback foo_union() :: :a | :b
   @callback foo_uneven_union() :: :a | %{a: 1}
+
+  @callback foo_multiple_typespec(arg :: :a) :: :a
+  @callback foo_multiple_typespec(arg :: :b) :: :b
 end
