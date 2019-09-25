@@ -314,10 +314,14 @@ defmodule Hammox do
 
   defp check_call(args, return_value, typespecs) when is_list(typespecs) do
     typespecs
-    |> Enum.map(fn typespec -> match_call(args, return_value, typespec) end)
-    |> Enum.max_by(fn
-      {:error, reasons} -> length(reasons)
-      :ok -> 9999 # will pick :ok if there is one
+    |> Enum.reduce_while({:error, []}, fn typespec, {:error, reasons} = result ->
+      case match_call(args, return_value, typespec) do
+        :ok ->
+          {:halt, :ok}
+
+        {:error, new_reasons} = new_result ->
+          {:cont, if(length(reasons) >= length(new_reasons), do: result, else: new_result)}
+      end
     end)
     |> case do
       {:error, _} = error -> raise TypeMatchError, error
