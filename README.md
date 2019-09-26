@@ -32,8 +32,84 @@ Once you are comfortable with Mox, switch to using Hammox.
 Replace all occurences of `Mox` with `Hammox`. Nothing more is required; all
 your mock calls in test are now ensured to conform to the behaviour typespec.
 
-## Examples
+## Example
 
+### Typical mock setup
+
+Let's say we have a database which can get us user data. We have a module,
+`RealDatabase` (not shown), which implements the following behaviour:
+```elixir
+defmodule Database do
+  @callback get_users() :: [binary()]
+end
+```
+We use this client in a `Stats` module which can aggregate data about users:
+```elixir
+defmodule Stats do
+  def count_users(database \\ RealDatabase) do
+    length(database.get_users())
+  end
+end
+```
+And we create a unit test for it:
+```elixir
+defmodule StatsTest do
+  use ExUnit.Case, async: true
+
+  test "count_users/0 returns correct user count" do
+    assert 2 == Stats.count_users()
+  end
+end
+```
+
+For this test to work, we would have to start a real instance of the database
+and provision it with two users. This is of course unnecessary brittleness —
+in a unit test, we only want to test that our Stats code provides correct
+results given specific inputs. To simplify, we will create a mocked Database
+using Mox and use it in the test:
+
+```elixir
+defmodule StatsTest do
+  use ExUnit.Case, async: true
+  import Mox
+
+  test "count_users/0 returns correct user count" do
+    defmock(DatabaseMock, for: Database)
+    expect(DatabaseMock, :get_users, fn ->
+      ["joe", "jim"]
+    end)
+
+    assert 2 == Stats.count_users(DatabaseMock)
+  end
+end
+```
+The test now passes as expected.
+
+### The contract breaks
+
+Imagine that some time later we want to add error flagging for our database
+client. We change `RealDatabase` and the corresponding behaviour, `Database`,
+to return an ok/error tuple instead of a raw value:
+```elixir
+defmodule Database do
+  @callback get_users() :: {:ok, [binary()]} | {:error, term()}
+end
+```
+
+However, The `Stats.count_users/0` test *will still pass*, even though the
+function will break when the real database client is used! This is because
+the mock is now invalid — it no longer implements the given behaviour, and
+therefore breaks the contract. Even though Mox is supposed to create mocks
+following explicit contracts, it does not take typespecs into account.
+
+This is where Hammox comes in. Simply swap Mox with Hammox and you will now
+get this: #TODO
+
+```
+** (Hammox.TypeMatchError)
+Returned value :atom does not match type Enumerable.t().
+  Value :atom does not implement the Enumerable protocol.
+```
 
 ## Protocol types
 
@@ -46,6 +122,12 @@ implementing the given protocol". Therefore, trying to pass `:atom` for an
 Returned value :atom does not match type Enumerable.t().
   Value :atom does not implement the Enumerable protocol.
 ```
+
+## Disable protection for specific mocks
+
+Hammox also includes Mox as a dependency. This means that if you would like
+to disable Hammox protection for a specific mock, you can simply use vanilla
+Mox for that specific instance. They will interoperate without problems.
 
 ## Limitations
 - For anonymous function types in typespecs, only the arity is checked.
