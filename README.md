@@ -1,12 +1,16 @@
 # Hammox
 
 Hammox is a library for rigorous unit testing using mocks, explicit
-behaviours and contract tests.
+behaviours and contract tests. You can use it to ensure both your mocks and
+implementations fulfill the same contract.
 
 It takes the excellent [Mox](https://github.com/plataformatec/mox) library
 and pushes its philosophy to its limits, providing automatic contract tests
 based on behaviour typespecs while maintaining full compability with code
 already using Mox.
+
+Hammox aims to catch as many contract bugs as possible while providing useful
+deep stacktraces so they can be easily tracked down and fixed.
 
 ## Installation
 
@@ -103,13 +107,85 @@ therefore breaks the contract. Even though Mox is supposed to create mocks
 following explicit contracts, it does not take typespecs into account.
 
 This is where Hammox comes in. Simply swap Mox with Hammox and you will now
-get this: #TODO
+get this when trying to run the test:
 
 ```
 ** (Hammox.TypeMatchError)
-Returned value :atom does not match type Enumerable.t().
-  Value :atom does not implement the Enumerable protocol.
+Returned value ["joe", "jim"] does not match type {:ok, [binary()]} | {:error, term()}.
 ```
+
+Now the consistency between the mock and its behaviour is enforced.
+
+### Completing the triangle
+
+Hammox automatically checks mocks with behaviours, but what about the real
+implementations? The real goal is to keep all units implementing a given
+behaviour in sync.
+
+You can decorate any function with Hammox checks by using `Hammox.protect/2`.
+It will return an anonymous function which you can use in place of the
+original module function. An example test:
+
+```elixir
+defmodule RealDatabaseTest do
+  use ExUnit.Case, async: true
+
+  test "get_users/0 returns list of users" do
+    get_users_0 = Hammox.protect({RealDatabase, :get_users, 0}, Database)
+    assert {:ok, ["jim", "joe"]} == get_users_0.()
+  end
+end
+```
+
+It's a good idea to put setup logic like this in a `setup_all` hook and then
+access the protected functions using the test context:
+
+```elixir
+defmodule RealDatabaseTest do
+  use ExUnit.Case, async: true
+
+  setup_all do
+    %{get_users_0: Hammox.protect({RealDatabase, :get_users, 0}, Database)}
+  end
+
+  test "get_users/0 returns list of users", %{get_users_0: get_users_0} do
+    assert {:ok, ["jim", "joe"]} == get_users_0.()
+  end
+end
+```
+
+Hammox also provides a `setup_all` friendly `Hammox.protect/3` function which
+leverages this pattern. It produces a map of decorated functions from the
+module and is especially useful when you're decorating several functions at
+once:
+
+```elixir
+defmodule RealDatabaseTest do
+  use ExUnit.Case, async: true
+
+  setup_all do
+    Hammox.protect(RealDatabase, Database, get_users: 0)
+  end
+
+  test "get_users/0 returns list of users", %{get_users_0: get_users_0} do
+    assert {:ok, ["jim", "joe"]} == get_users_0.()
+  end
+end
+```
+
+#### Why use Hammox for my application code when I have Dialyzer?
+
+Dialyzer cannot detect Mox style mocks not conforming to typespec.
+
+The main aim of Hammox is to enforce consistency between behaviours, mocks
+and implementations. This is best achieved when both mocks and
+implementations are subjected to the exact same checks.
+
+Dialyzer is a static analysis tool; Hammox is a dynamic contract test
+provider. They operate differently and one can catch some bugs when the other
+doesn't. While it is true that Hammox would be redudant given a strong,
+strict, TypeScript-like type system for Elixir, Dialyzer is far for providing
+that sort of coverage.
 
 ## Protocol types
 
