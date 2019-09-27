@@ -16,7 +16,7 @@ defmodule Hammox.MixProject do
       name: "Hammox",
       description: "Automated contract testing for functions and mocks",
       source_url: "https://github.com/msz/hammox",
-      # source_ref: "v#{@version}" # uncomment when v0.1.0 is released
+      source_ref: "v#{@version}",
       docs: [
         main: "readme",
         extras: ["README.md"]
