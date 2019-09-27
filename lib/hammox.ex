@@ -300,6 +300,10 @@ defmodule Hammox do
     end
   end
 
+  defp protected(_code, _typespec, arity) when arity > 9 do
+    raise "Hammox only supports protecting functions with arity up to 9. Why do you need over 9 parameters anyway?"
+  end
+
   defp protected_code(code, typespecs, args) do
     return_value =
       case code do
