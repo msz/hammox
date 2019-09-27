@@ -1103,18 +1103,6 @@ defmodule HammoxTest do
     end
   end
 
-  describe "fetch_typespecs_for_mock/3" do
-    test "gets callbacks for TestMock" do
-      [
-        {:type, _, :fun,
-         [
-           {:type, _, :product, []},
-           {:type, _, :atom, []}
-         ]}
-      ] = fetch_typespecs_for_mock(TestMock, :foo_atom, 0)
-    end
-  end
-
   defp assert_pass(function_name, value) do
     TestMock |> expect(function_name, fn -> value end)
     assert value == apply(TestMock, function_name, [])
@@ -1133,41 +1121,43 @@ defmodule HammoxTest do
     end)
   end
 
-  describe "resolve_remote_type/1" do
-    test "constructs a type from the remote type and args" do
-      assert {:ok, {:type, _, :list, [{:type, _, :list, [{:type, _, :number, []}]}]}} =
-               Hammox.resolve_remote_type(
-                 {:remote_type, 0,
-                  [
-                    {:atom, 0, Hammox.Test.Struct},
-                    {:atom, 0, :my_list},
-                    [{:type, 0, :number, []}]
-                  ]}
-               )
-    end
+  # TODO: move this to a separate type engine test file
 
-    test "error when module cannot be fetched" do
-      assert {:error, {:module_fetch_failure, Hammox.Test.NonexistentStruct}} ==
-               Hammox.resolve_remote_type(
-                 {:remote_type, 0,
-                  [
-                    {:atom, 0, Hammox.Test.NonexistentStruct},
-                    {:atom, 0, :my_list},
-                    [{:type, 0, :number, []}]
-                  ]}
-               )
-    end
+  # describe "resolve_remote_type/1" do
+  #   test "constructs a type from the remote type and args" do
+  #     assert {:ok, {:type, _, :list, [{:type, _, :list, [{:type, _, :number, []}]}]}} =
+  #              Hammox.resolve_remote_type(
+  #                {:remote_type, 0,
+  #                 [
+  #                   {:atom, 0, Hammox.Test.Struct},
+  #                   {:atom, 0, :my_list},
+  #                   [{:type, 0, :number, []}]
+  #                 ]}
+  #              )
+  #   end
 
-    test "error when type cannot be found" do
-      assert {:error, {:remote_type_fetch_failure, {Hammox.Test.Struct, :nonexistent_type, 1}}} ==
-               Hammox.resolve_remote_type(
-                 {:remote_type, 0,
-                  [
-                    {:atom, 0, Hammox.Test.Struct},
-                    {:atom, 0, :nonexistent_type},
-                    [{:type, 0, :number, []}]
-                  ]}
-               )
-    end
-  end
+  #   test "error when module cannot be fetched" do
+  #     assert {:error, {:module_fetch_failure, Hammox.Test.NonexistentStruct}} ==
+  #              Hammox.resolve_remote_type(
+  #                {:remote_type, 0,
+  #                 [
+  #                   {:atom, 0, Hammox.Test.NonexistentStruct},
+  #                   {:atom, 0, :my_list},
+  #                   [{:type, 0, :number, []}]
+  #                 ]}
+  #              )
+  #   end
+
+  #   test "error when type cannot be found" do
+  #     assert {:error, {:remote_type_fetch_failure, {Hammox.Test.Struct, :nonexistent_type, 1}}} ==
+  #              Hammox.resolve_remote_type(
+  #                {:remote_type, 0,
+  #                 [
+  #                   {:atom, 0, Hammox.Test.Struct},
+  #                   {:atom, 0, :nonexistent_type},
+  #                   [{:type, 0, :number, []}]
+  #                 ]}
+  #              )
+  #   end
+  # end
 end

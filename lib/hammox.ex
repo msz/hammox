@@ -1,5 +1,19 @@
 defmodule Hammox do
+  @moduledoc """
+  Hammox is a library for rigorous unit testing using mocks, explicit
+  behaviours and contract tests.
+
+  See the [README](readme.html) page for usage guide and examples.
+
+  Most of the functions in this module come from
+  [Mox](https://hexdocs.pm/mox/Mox.html) for backwards compatibility. As of
+  v0.1.0, the only Hammox-specific functions are `protect/2` and `protect/3`.
+  """
+
+  alias Hammox.Utils
+
   defmodule TypeMatchError do
+    @moduledoc false
     defexception [:message]
 
     @impl true
@@ -89,15 +103,15 @@ defmodule Hammox do
     end
 
     defp human_reason({:struct_name_type_mismatch, expected_struct_name}) do
-      "Expected the value to be #{Hammox.module_to_string(expected_struct_name)} struct."
+      "Expected the value to be #{Utils.module_to_string(expected_struct_name)} struct."
     end
 
     defp human_reason({:module_fetch_failure, module_name}) do
-      "Could not load module #{Hammox.module_to_string(module_name)}."
+      "Could not load module #{Utils.module_to_string(module_name)}."
     end
 
     defp human_reason({:remote_type_fetch_failure, {module_name, type_name, arity}}) do
-      "Could not find type #{type_name}/#{arity} in #{Hammox.module_to_string(module_name)}."
+      "Could not find type #{type_name}/#{arity} in #{Utils.module_to_string(module_name)}."
     end
 
     defp human_reason({:protocol_type_mismatch, value, protocol_name}) do
@@ -150,17 +164,27 @@ defmodule Hammox do
   end
 
   defmodule TypespecNotFoundError do
+    @moduledoc false
     defexception [:message]
   end
 
+  @doc """
+  See [Mox.allow/3](https://hexdocs.pm/mox/Mox.html#allow/3).
+  """
   def allow(mock, owner_pid, allowed_via) do
     Mox.allow(mock, owner_pid, allowed_via)
   end
 
+  @doc """
+  See [Mox.defmock/2](https://hexdocs.pm/mox/Mox.html#defmock/2).
+  """
   def defmock(name, options) do
     Mox.defmock(name, options)
   end
 
+  @doc """
+  See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
+  """
   def expect(mock, name, n \\ 1, code) do
     arity = :erlang.fun_info(code)[:arity]
 
@@ -176,37 +200,87 @@ defmodule Hammox do
     Mox.expect(mock, name, n, hammox_code)
   end
 
+  @doc """
+  See [Mox.set_mox_from_context/1](https://hexdocs.pm/mox/Mox.html#set_mox_from_context/1).
+  """
   def set_mox_from_context(context) do
     Mox.set_mox_from_context(context)
   end
 
+  @doc """
+  See [Mox.set_mox_global/1](https://hexdocs.pm/mox/Mox.html#set_mox_global/1).
+  """
   def set_mox_global(context \\ %{}) do
     Mox.set_mox_global(context)
   end
 
+  @doc """
+  See [Mox.set_mox_private/1](https://hexdocs.pm/mox/Mox.html#set_mox_private/1).
+  """
   def set_mox_private(context \\ %{}) do
     Mox.set_mox_private(context)
   end
 
+  @doc """
+  See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
+  """
   def stub(mock, name, code) do
     Mox.stub(mock, name, code)
   end
 
+  @doc """
+  See [Mox.stub_with/2](https://hexdocs.pm/mox/Mox.html#stub_with/2).
+  """
   def stub_with(mock, module) do
     Mox.stub_with(mock, module)
   end
 
+  @doc """
+  See [Mox.verify!/0](https://hexdocs.pm/mox/Mox.html#verify!/0).
+  """
   def verify!() do
     Mox.verify!()
   end
 
+  @doc """
+  See [Mox.verify!/1](https://hexdocs.pm/mox/Mox.html#verify!/1).
+  """
   def verify!(mock) do
     Mox.verify!(mock)
   end
 
+  @doc """
+  See [Mox.verify_on_exit!/1](https://hexdocs.pm/mox/Mox.html#verify_on_exit!/1).
+  """
   def verify_on_exit!(context \\ %{}) do
     Mox.verify_on_exit!(context)
   end
+
+  @doc since: "0.1.0"
+  @doc """
+  Takes the function provided by a module, function, arity tuple and
+  decorates it with Hammox type checking.
+
+  Returns a new anonymous function.
+
+  Example:
+
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+  end
+
+  defmodule TestCalculator do
+    def add(a, b), do: a + b
+  end
+
+  add_2 = Hammox.protect({TestCalculator, :add, 2}, Calculator)
+
+  add_2.(1.5, 2.5) # throws Hammox.TypeMatchError
+  ```
+  """
+  @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
+  def protect(mfa, behaviour_name)
 
   def protect({module_name, function_name, arity}, behaviour_name)
       when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
@@ -217,6 +291,46 @@ defmodule Hammox do
     protected(code, typespecs, arity)
   end
 
+  @doc since: "0.1.0"
+  @doc """
+  Same as `protect/2`, but allows decorating multiple functions at the same
+  time.
+
+  Provide a list of functions to decorate as third argument.
+
+  Returns a map where the keys are atoms of the form
+  `:{function_name}_{arity}` and values are the decorated anonymous
+  functions.
+
+  Example:
+
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+    @callback add(integer(), integer(), integer()) :: integer()
+    @callback multiply(integer(), integer()) :: integer()
+  end
+
+  defmodule TestCalculator do
+    def add(a, b), do: a + b
+    def add(a, b, c), do: a + b + c
+    def multiply(a, b), do: a * b
+  end
+
+  %{
+    add_2: add_2,
+    add_3: add_3,
+    multiply_2: multiply_2
+  } = Hammox.protect(TestCalculator, Calculator, add: [2, 3], multiply: 2)
+
+  ```
+  """
+  @spec protect(
+          module_name :: module(),
+          behaviour_name :: module(),
+          funs :: [{atom(), arity() | [arity()]}]
+        ) ::
+          fun()
   def protect(module_name, behaviour_name, funs)
       when is_atom(module_name) and is_atom(behaviour_name) and is_list(funs) do
     funs
@@ -376,21 +490,21 @@ defmodule Hammox do
     end
   end
 
-  def fetch_typespecs!(behaviour_name, function_name, arity) do
+  defp fetch_typespecs!(behaviour_name, function_name, arity) do
     case fetch_typespecs(behaviour_name, function_name, arity) do
       [] ->
         raise TypespecNotFoundError,
           message:
-            "Could not find typespec for #{module_to_string(behaviour_name)}.#{function_name}/#{
-              arity
-            }."
+            "Could not find typespec for #{Utils.module_to_string(behaviour_name)}.#{
+              function_name
+            }/#{arity}."
 
       typespecs ->
         typespecs
     end
   end
 
-  def fetch_typespecs(behaviour_module_name, function_name, arity) do
+  defp fetch_typespecs(behaviour_module_name, function_name, arity) do
     {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
 
     callbacks
@@ -403,8 +517,8 @@ defmodule Hammox do
     end)
   end
 
-  def fetch_typespecs_for_mock(mock_name, function_name, arity)
-      when is_atom(mock_name) and is_atom(function_name) and is_integer(arity) do
+  defp fetch_typespecs_for_mock(mock_name, function_name, arity)
+       when is_atom(mock_name) and is_atom(function_name) and is_integer(arity) do
     mock_name.__mock_for__()
     |> Enum.map(fn behaviour ->
       fetch_typespecs(behaviour, function_name, arity)
@@ -412,7 +526,7 @@ defmodule Hammox do
     |> List.flatten()
   end
 
-  def arg_typespec(function_typespec, arg_index) do
+  defp arg_typespec(function_typespec, arg_index) do
     {:type, _, :fun, [{:type, _, :product, arg_typespecs}, _]} = function_typespec
 
     case Enum.at(arg_typespecs, arg_index) do
@@ -422,7 +536,7 @@ defmodule Hammox do
     end
   end
 
-  def match_type(value, {:type, _, :union, union_types} = union) when is_list(union_types) do
+  defp match_type(value, {:type, _, :union, union_types} = union) when is_list(union_types) do
     results =
       Enum.reduce_while(union_types, [], fn type, reason_stacks ->
         case match_type(value, type) do
@@ -443,75 +557,75 @@ defmodule Hammox do
     end
   end
 
-  def match_type(_value, {:type, _, :any, []}) do
+  defp match_type(_value, {:type, _, :any, []}) do
     :ok
   end
 
-  def match_type(value, {:type, _, :none, []} = type) do
+  defp match_type(value, {:type, _, :none, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :atom, []}) when is_atom(value) do
+  defp match_type(value, {:type, _, :atom, []}) when is_atom(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :atom, []} = type) do
+  defp match_type(value, {:type, _, :atom, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :map, :any}) when is_map(value) do
+  defp match_type(value, {:type, _, :map, :any}) when is_map(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :pid, []}) when is_pid(value) do
+  defp match_type(value, {:type, _, :pid, []}) when is_pid(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :pid, []} = type) do
+  defp match_type(value, {:type, _, :pid, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :port, []}) when is_port(value) do
+  defp match_type(value, {:type, _, :port, []}) when is_port(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :port, []} = type) do
+  defp match_type(value, {:type, _, :port, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :reference, []}) when is_reference(value) do
+  defp match_type(value, {:type, _, :reference, []}) when is_reference(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :reference, []} = type) do
+  defp match_type(value, {:type, _, :reference, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(
-        %{__struct__: _},
-        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]}
-      ) do
+  defp match_type(
+         %{__struct__: _},
+         {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]}
+       ) do
     :ok
   end
 
-  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]} = type) do
+  defp match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:remote_type, 0, [{:atom, 0, :elixir}, {:atom, 0, :struct}, []]} = type) do
+  defp match_type(value, {:remote_type, 0, [{:atom, 0, :elixir}, {:atom, 0, :struct}, []]} = type) do
     if Map.has_key?(value, :__struct__), do: :ok, else: type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :tuple, :any}) when is_tuple(value) do
+  defp match_type(value, {:type, _, :tuple, :any}) when is_tuple(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :tuple, :any} = type) do
+  defp match_type(value, {:type, _, :tuple, :any} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :tuple, tuple_types})
-      when is_tuple(value) and tuple_size(value) == length(tuple_types) do
+  defp match_type(value, {:type, _, :tuple, tuple_types})
+       when is_tuple(value) and tuple_size(value) == length(tuple_types) do
     error =
       [Tuple.to_list(value), tuple_types, 0..(tuple_size(value) - 1)]
       |> Enum.zip()
@@ -528,86 +642,87 @@ defmodule Hammox do
     error || :ok
   end
 
-  def match_type(value, {:type, _, :tuple, _} = type) do
+  defp match_type(value, {:type, _, :tuple, _} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :float, []}) when is_float(value) do
+  defp match_type(value, {:type, _, :float, []}) when is_float(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :float, []} = type) do
+  defp match_type(value, {:type, _, :float, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :integer, []}) when is_integer(value) do
+  defp match_type(value, {:type, _, :integer, []}) when is_integer(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :integer, []} = type) do
+  defp match_type(value, {:type, _, :integer, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :neg_integer, []}) when is_integer(value) and value < 0 do
+  defp match_type(value, {:type, _, :neg_integer, []}) when is_integer(value) and value < 0 do
     :ok
   end
 
-  def match_type(value, {:type, _, :neg_integer, []} = type) do
+  defp match_type(value, {:type, _, :neg_integer, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :non_neg_integer, []}) when is_integer(value) and value >= 0 do
+  defp match_type(value, {:type, _, :non_neg_integer, []})
+       when is_integer(value) and value >= 0 do
     :ok
   end
 
-  def match_type(value, {:type, _, :non_neg_integer, []} = type) do
+  defp match_type(value, {:type, _, :non_neg_integer, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :pos_integer, []}) when is_integer(value) and value > 0 do
+  defp match_type(value, {:type, _, :pos_integer, []}) when is_integer(value) and value > 0 do
     :ok
   end
 
-  def match_type(value, {:type, _, :pos_integer, []} = type) do
+  defp match_type(value, {:type, _, :pos_integer, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type([], {:type, _, :list, _}) do
+  defp match_type([], {:type, _, :list, _}) do
     :ok
   end
 
-  def match_type(value, {:type, _, :list, []}) when is_list(value) do
+  defp match_type(value, {:type, _, :list, []}) when is_list(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :list, [elem_typespec]}) when is_list(value) do
+  defp match_type(value, {:type, _, :list, [elem_typespec]}) when is_list(value) do
     match_type(
       value,
       {:type, 0, :nonempty_list, [elem_typespec]}
     )
   end
 
-  def match_type(value, {:type, _, :list, _} = type) do
+  defp match_type(value, {:type, _, :list, _} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type([_ | _], {:type, _, :nonempty_list, []}) do
+  defp match_type([_ | _], {:type, _, :nonempty_list, []}) do
     :ok
   end
 
-  def match_type(value, {:type, _, :nonempty_list, []}) do
+  defp match_type(value, {:type, _, :nonempty_list, []}) do
     match_type(value, {:type, 0, :nonempty_list, [{:type, 0, :any}]})
   end
 
-  def match_type([], {:type, _, :nonempty_list, [_]} = type) do
+  defp match_type([], {:type, _, :nonempty_list, [_]} = type) do
     {:error, [{:empty_list_type_mismatch, type}]}
   end
 
-  def match_type([_a | b], {:type, _, :nonempty_list, [_]} = type) when not is_list(b) do
+  defp match_type([_a | b], {:type, _, :nonempty_list, [_]} = type) when not is_list(b) do
     {:error, [{:improper_list_type_mismatch, type}]}
   end
 
-  def match_type(value, {:type, _, :nonempty_list, [elem_typespec]}) when is_list(value) do
+  defp match_type(value, {:type, _, :nonempty_list, [elem_typespec]}) when is_list(value) do
     error =
       value
       |> Enum.zip(0..length(value))
@@ -624,11 +739,11 @@ defmodule Hammox do
     error || :ok
   end
 
-  def match_type(value, {:type, _, :nonempty_list, _} = type) do
+  defp match_type(value, {:type, _, :nonempty_list, _} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :maybe_improper_list, [type1, type2]}) do
+  defp match_type(value, {:type, _, :maybe_improper_list, [type1, type2]}) do
     match_type(
       value,
       {:type, 0, :union,
@@ -636,24 +751,24 @@ defmodule Hammox do
     )
   end
 
-  def match_type([], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
+  defp match_type([], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
     {:error, [{:empty_list_type_mismatch, type}]}
   end
 
-  def match_type([_ | []], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
+  defp match_type([_ | []], {:type, _, :nonempty_improper_list, [_type1, _type2]} = type) do
     {:error, [{:proper_list_type_mismatch, type}]}
   end
 
-  def match_type(list, {:type, _, :nonempty_improper_list, [_type1, _type2]} = type)
-      when is_list(list) do
+  defp match_type(list, {:type, _, :nonempty_improper_list, [_type1, _type2]} = type)
+       when is_list(list) do
     match_improper_list_type(list, type, 0)
   end
 
-  def match_type(value, {:type, _, :nonempty_improper_list, _} = type) do
+  defp match_type(value, {:type, _, :nonempty_improper_list, _} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :nonempty_maybe_improper_list, [type1, type2]}) do
+  defp match_type(value, {:type, _, :nonempty_maybe_improper_list, [type1, type2]}) do
     match_type(
       value,
       {:type, 0, :union,
@@ -661,38 +776,38 @@ defmodule Hammox do
     )
   end
 
-  def match_type(value, {:atom, _, atom}) when value == atom do
+  defp match_type(value, {:atom, _, atom}) when value == atom do
     :ok
   end
 
-  def match_type(value, {:atom, _, _atom} = type) do
+  defp match_type(value, {:atom, _, _atom} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, 0}]})
-      when is_bitstring(value) and bit_size(value) == head_size do
+  defp match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, 0}]})
+       when is_bitstring(value) and bit_size(value) == head_size do
     :ok
   end
 
-  def match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, unit}]})
-      when is_bitstring(value) and rem(bit_size(value) - head_size, unit) == 0 do
+  defp match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, unit}]})
+       when is_bitstring(value) and rem(bit_size(value) - head_size, unit) == 0 do
     :ok
   end
 
-  def match_type(
-        value,
-        {:type, _, :binary, [{:integer, _, _head_size}, {:integer, _, _unit}]} = type
-      ) do
+  defp match_type(
+         value,
+         {:type, _, :binary, [{:integer, _, _head_size}, {:integer, _, _unit}]} = type
+       ) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :fun, [{:type, _, :any}, _return_type]})
-      when is_function(value) do
+  defp match_type(value, {:type, _, :fun, [{:type, _, :any}, _return_type]})
+       when is_function(value) do
     :ok
   end
 
-  def match_type(value, {:type, _, :fun, [{:type, _, :product, param_types}, _return_type]})
-      when is_function(value) do
+  defp match_type(value, {:type, _, :fun, [{:type, _, :product, param_types}, _return_type]})
+       when is_function(value) do
     expected = length(param_types)
     actual = :erlang.fun_info(value)[:arity]
 
@@ -703,40 +818,40 @@ defmodule Hammox do
     end
   end
 
-  def match_type(value, {:type, _, :fun, []}) do
+  defp match_type(value, {:type, _, :fun, []}) do
     match_type(value, {:type, 0, :fun, [{:type, 0, :any}, {:type, 0, :any, []}]})
   end
 
-  def match_type(value, {:type, _, :fun, _} = type) do
+  defp match_type(value, {:type, _, :fun, _} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:integer, _, integer}) when value === integer do
+  defp match_type(value, {:integer, _, integer}) when value === integer do
     :ok
   end
 
-  def match_type(value, {:integer, _, _integer} = type) do
+  defp match_type(value, {:integer, _, _integer} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]})
-      when value in low..high do
+  defp match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]})
+       when value in low..high do
     :ok
   end
 
-  def match_type(value, {:type, _, :range, _range} = type) do
+  defp match_type(value, {:type, _, :range, _range} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, nil, []}) when value == [] do
+  defp match_type(value, {:type, _, nil, []}) when value == [] do
     :ok
   end
 
-  def match_type(value, {:type, _, nil, []} = type) do
+  defp match_type(value, {:type, _, nil, []} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :map, []} = type) when is_map(value) do
+  defp match_type(value, {:type, _, :map, []} = type) when is_map(value) do
     if map_size(value) == 0 do
       :ok
     else
@@ -744,7 +859,7 @@ defmodule Hammox do
     end
   end
 
-  def match_type(%{__struct__: struct_name} = value, {:type, _, :map, map_entry_types} = type) do
+  defp match_type(%{__struct__: struct_name} = value, {:type, _, :map, map_entry_types} = type) do
     {struct_field_types, rest_field_types} =
       Enum.split_with(map_entry_types, fn entry_type ->
         match?({:type, _, :map_field_exact, [{:atom, _, :__struct__}, _]}, entry_type)
@@ -762,7 +877,7 @@ defmodule Hammox do
     end
   end
 
-  def match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
+  defp match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
     hit_map =
       map_entry_types
       |> Enum.map(fn
@@ -878,61 +993,61 @@ defmodule Hammox do
     end
   end
 
-  def match_type(value, {:type, _, :map, _} = type) do
+  defp match_type(value, {:type, _, :map, _} = type) do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:type, _, :term, []}) do
+  defp match_type(value, {:type, _, :term, []}) do
     match_type(value, {:type, 0, :any, []})
   end
 
-  def match_type(value, {:type, _, :arity, []}) do
+  defp match_type(value, {:type, _, :arity, []}) do
     match_type(value, {:type, 0, :range, [{:integer, 0, 0}, {:integer, 0, 255}]})
   end
 
-  def match_type(
-        value,
-        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :as_boolean}, [inner_type]]}
-      ) do
+  defp match_type(
+         value,
+         {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :as_boolean}, [inner_type]]}
+       ) do
     match_type(value, inner_type)
   end
 
-  def match_type(value, {:type, _, :binary, []}) do
+  defp match_type(value, {:type, _, :binary, []}) do
     match_type(value, {:type, 0, :binary, [{:integer, 0, 0}, {:integer, 0, 8}]})
   end
 
-  def match_type(value, {:type, _, :bitstring, []}) do
+  defp match_type(value, {:type, _, :bitstring, []}) do
     match_type(value, {:type, 0, :binary, [{:integer, 0, 0}, {:integer, 0, 1}]})
   end
 
-  def match_type(value, {:type, _, :boolean, []}) do
+  defp match_type(value, {:type, _, :boolean, []}) do
     match_type(value, {:type, 0, :union, [{:atom, 0, true}, {:atom, 0, false}]})
   end
 
-  def match_type(value, {:type, _, :byte, []}) do
+  defp match_type(value, {:type, _, :byte, []}) do
     match_type(value, {:type, 0, :range, [{:integer, 0, 0}, {:integer, 0, 255}]})
   end
 
-  def match_type(value, {:type, _, :char, []}) do
+  defp match_type(value, {:type, _, :char, []}) do
     match_type(value, {:type, 0, :range, [{:integer, 0, 0}, {:integer, 0, 0x10FFFF}]})
   end
 
-  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :charlist}, []]}) do
+  defp match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :charlist}, []]}) do
     match_type(value, {:type, 0, :list, [{:type, 0, :char, []}]})
   end
 
-  def match_type(
-        value,
-        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :nonempty_charlist}, []]}
-      ) do
+  defp match_type(
+         value,
+         {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :nonempty_charlist}, []]}
+       ) do
     match_type(value, {:type, 0, :nonempty_list, [{:type, 0, :char, []}]})
   end
 
-  def match_type(value, {:type, _, :function, []}) do
+  defp match_type(value, {:type, _, :function, []}) do
     match_type(value, {:type, 0, :fun, []})
   end
 
-  def match_type(value, {:type, _, :identifier, []}) do
+  defp match_type(value, {:type, _, :identifier, []}) do
     match_type(
       value,
       {:type, 0, :union,
@@ -940,11 +1055,11 @@ defmodule Hammox do
     )
   end
 
-  def match_type(value, {:type, _, :iodata, []}) do
+  defp match_type(value, {:type, _, :iodata, []}) do
     match_type(value, {:type, 0, :union, [{:type, 0, :binary, []}, {:type, 0, :iolist, []}]})
   end
 
-  def match_type(value, {:type, _, :iolist, []}) do
+  defp match_type(value, {:type, _, :iolist, []}) do
     match_type(
       value,
       {:type, 0, :maybe_improper_list,
@@ -956,77 +1071,77 @@ defmodule Hammox do
     )
   end
 
-  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :keyword}, []]}) do
+  defp match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :keyword}, []]}) do
     match_type(
       value,
       {:remote_type, 0, [{:atom, 0, :elixir}, {:atom, 0, :keyword}, [{:type, 0, :any, []}]]}
     )
   end
 
-  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :keyword}, [type]]}) do
+  defp match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :keyword}, [type]]}) do
     match_type(
       value,
       {:type, 0, :list, [{:type, 0, :tuple, [{:type, 0, :atom, []}, type]}]}
     )
   end
 
-  def match_type(value, {:type, _, :maybe_improper_list, []}) do
+  defp match_type(value, {:type, _, :maybe_improper_list, []}) do
     match_type(
       value,
       {:type, 0, :maybe_improper_list, [{:type, 0, :any, []}, {:type, 0, :any, []}]}
     )
   end
 
-  def match_type(value, {:type, _, :nonempty_maybe_improper_list, []}) do
+  defp match_type(value, {:type, _, :nonempty_maybe_improper_list, []}) do
     match_type(
       value,
       {:type, 0, :nonempty_maybe_improper_list, [{:type, 0, :any, []}, {:type, 0, :any, []}]}
     )
   end
 
-  def match_type(value, {:type, _, :mfa, []}) do
+  defp match_type(value, {:type, _, :mfa, []}) do
     match_type(
       value,
       {:type, 0, :tuple, [{:type, 0, :module, []}, {:type, 0, :atom, []}, {:type, 0, :arity, []}]}
     )
   end
 
-  def match_type(value, {:type, _, :module, []}) do
+  defp match_type(value, {:type, _, :module, []}) do
     match_type(
       value,
       {:type, 0, :atom, []}
     )
   end
 
-  def match_type(value, {:type, _, :no_return, []}) do
+  defp match_type(value, {:type, _, :no_return, []}) do
     match_type(
       value,
       {:type, 0, :none, []}
     )
   end
 
-  def match_type(value, {:type, _, :node, []}) do
+  defp match_type(value, {:type, _, :node, []}) do
     match_type(
       value,
       {:type, 0, :atom, []}
     )
   end
 
-  def match_type(value, {:type, _, :number, []}) do
+  defp match_type(value, {:type, _, :number, []}) do
     match_type(value, {:type, 0, :union, [{:type, 0, :integer, []}, {:type, 0, :float, []}]})
   end
 
-  def match_type(value, {:type, _, :timeout, []}) do
+  defp match_type(value, {:type, _, :timeout, []}) do
     match_type(
       value,
       {:type, 0, :union, [{:atom, 0, :infinity}, {:type, 0, :non_neg_integer, []}]}
     )
   end
 
-  def match_type(
-        value,
-        {:remote_type, _, _} = type
-      ) do
+  defp match_type(
+         value,
+         {:remote_type, _, _} = type
+       ) do
     with :ok <- maybe_match_protocol(value, type),
          {:ok, remote_type} <- resolve_remote_type(type) do
       match_type(value, remote_type)
@@ -1035,10 +1150,10 @@ defmodule Hammox do
     end
   end
 
-  def maybe_match_protocol(
-        value,
-        {:remote_type, _, [{:atom, _, module_name}, {:atom, _, :t}, []]}
-      ) do
+  defp maybe_match_protocol(
+         value,
+         {:remote_type, _, [{:atom, _, module_name}, {:atom, _, :t}, []]}
+       ) do
     if function_exported?(module_name, :__protocol__, 1) and
          function_exported?(module_name, :impl_for, 1) do
       case apply(module_name, :impl_for, [value]) do
@@ -1050,14 +1165,14 @@ defmodule Hammox do
     end
   end
 
-  def maybe_match_protocol(_value, _type) do
+  defp maybe_match_protocol(_value, _type) do
     :ok
   end
 
-  def resolve_remote_type(
-        {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]}
-      )
-      when is_atom(module_name) and is_atom(type_name) and is_list(args) do
+  defp resolve_remote_type(
+         {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]}
+       )
+       when is_atom(module_name) and is_atom(type_name) and is_list(args) do
     with {:ok, types} <- fetch_types(module_name),
          {:ok, {:type, {_name, type, vars}}} <- get_type(types, type_name, length(args)) do
       resolved_type =
@@ -1167,13 +1282,5 @@ defmodule Hammox do
 
   defp type_mismatch(value, type) do
     {:error, [{:type_mismatch, value, type}]}
-  end
-
-  def module_to_string(module_name) do
-    module_name
-    |> Atom.to_string()
-    |> String.split(".")
-    |> Enum.drop(1)
-    |> Enum.join(".")
   end
 end
