@@ -109,7 +109,7 @@ following explicit contracts, it does not take typespecs into account.
 This is where Hammox comes in. Simply swap Mox with Hammox and you will now
 get this when trying to run the test:
 
-```
+```shell
 ** (Hammox.TypeMatchError)
 Returned value ["joe", "jim"] does not match type {:ok, [binary()]} | {:error, term()}.
 ```
@@ -193,7 +193,8 @@ A `t()` type defined on a protocol is taken by Hammox to mean "a struct
 implementing the given protocol". Therefore, trying to pass `:atom` for an
 `Enumerable.t()` will produce an error, even though the type is defined as
 `term()`:
-```
+
+```shell
 ** (Hammox.TypeMatchError)
 Returned value :atom does not match type Enumerable.t().
   Value :atom does not implement the Enumerable protocol.
