@@ -15,7 +15,7 @@ deep stacktraces so they can be easily tracked down and fixed.
 ## Installation
 
 If you are currently using [Mox](https://github.com/plataformatec/mox),
-delete it from your list of dependencies in `mix.exs`. Then add `hammox`:
+delete it from your list of dependencies in `mix.exs`. Then add `:hammox`:
 
 ```elixir
 def deps do
