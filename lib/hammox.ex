@@ -165,12 +165,10 @@ defmodule Hammox do
   def protect(module_name, behaviour_name, funs)
       when is_atom(module_name) and is_atom(behaviour_name) and is_list(funs) do
     funs
-    |> Enum.map(fn
-      {function_name, arity} when is_integer(arity) -> {function_name, [arity]}
-      {function_name, arities} when is_list(arities) -> {function_name, arities}
-    end)
-    |> Enum.map(fn {function_name, arities} ->
-      Enum.map(arities, fn arity ->
+    |> Enum.flat_map(fn {function_name, arity_or_arities} ->
+      arity_or_arities
+      |> List.wrap()
+      |> Enum.map(fn arity ->
         key =
           function_name
           |> Atom.to_string()
@@ -181,7 +179,6 @@ defmodule Hammox do
         {key, value}
       end)
     end)
-    |> List.flatten()
     |> Enum.into(%{})
   end
 
