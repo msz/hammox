@@ -69,9 +69,9 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(
-         %{__struct__: _},
-         {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]}
-       ) do
+        %{__struct__: _},
+        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]}
+      ) do
     :ok
   end
 
@@ -92,7 +92,7 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(value, {:type, _, :tuple, tuple_types})
-       when is_tuple(value) and tuple_size(value) == length(tuple_types) do
+      when is_tuple(value) and tuple_size(value) == length(tuple_types) do
     error =
       [Tuple.to_list(value), tuple_types, 0..(tuple_size(value) - 1)]
       |> Enum.zip()
@@ -138,7 +138,7 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(value, {:type, _, :non_neg_integer, []})
-       when is_integer(value) and value >= 0 do
+      when is_integer(value) and value >= 0 do
     :ok
   end
 
@@ -227,7 +227,7 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(list, {:type, _, :nonempty_improper_list, [_type1, _type2]} = type)
-       when is_list(list) do
+      when is_list(list) do
     match_improper_list_type(list, type, 0)
   end
 
@@ -252,29 +252,29 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, 0}]})
-       when is_bitstring(value) and bit_size(value) == head_size do
+      when is_bitstring(value) and bit_size(value) == head_size do
     :ok
   end
 
   def match_type(value, {:type, _, :binary, [{:integer, _, head_size}, {:integer, _, unit}]})
-       when is_bitstring(value) and rem(bit_size(value) - head_size, unit) == 0 do
+      when is_bitstring(value) and rem(bit_size(value) - head_size, unit) == 0 do
     :ok
   end
 
   def match_type(
-         value,
-         {:type, _, :binary, [{:integer, _, _head_size}, {:integer, _, _unit}]} = type
-       ) do
+        value,
+        {:type, _, :binary, [{:integer, _, _head_size}, {:integer, _, _unit}]} = type
+      ) do
     type_mismatch(value, type)
   end
 
   def match_type(value, {:type, _, :fun, [{:type, _, :any}, _return_type]})
-       when is_function(value) do
+      when is_function(value) do
     :ok
   end
 
   def match_type(value, {:type, _, :fun, [{:type, _, :product, param_types}, _return_type]})
-       when is_function(value) do
+      when is_function(value) do
     expected = length(param_types)
     actual = :erlang.fun_info(value)[:arity]
 
@@ -302,7 +302,7 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]})
-       when value in low..high do
+      when value in low..high do
     :ok
   end
 
@@ -473,9 +473,9 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(
-         value,
-         {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :as_boolean}, [inner_type]]}
-       ) do
+        value,
+        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :as_boolean}, [inner_type]]}
+      ) do
     match_type(value, inner_type)
   end
 
@@ -504,9 +504,9 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(
-         value,
-         {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :nonempty_charlist}, []]}
-       ) do
+        value,
+        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :nonempty_charlist}, []]}
+      ) do
     match_type(value, {:type, 0, :nonempty_list, [{:type, 0, :char, []}]})
   end
 
@@ -606,9 +606,9 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(
-         value,
-         {:remote_type, _, _} = type
-       ) do
+        value,
+        {:remote_type, _, _} = type
+      ) do
     with :ok <- maybe_match_protocol(value, type),
          {:ok, remote_type} <- resolve_remote_type(type) do
       match_type(value, remote_type)
