@@ -172,16 +172,12 @@ defmodule Hammox do
   @doc """
   See [Mox.allow/3](https://hexdocs.pm/mox/Mox.html#allow/3).
   """
-  def allow(mock, owner_pid, allowed_via) do
-    Mox.allow(mock, owner_pid, allowed_via)
-  end
+  defdelegate allow(mock, owner_pid, allowed_via), to: Mox
 
   @doc """
   See [Mox.defmock/2](https://hexdocs.pm/mox/Mox.html#defmock/2).
   """
-  def defmock(name, options) do
-    Mox.defmock(name, options)
-  end
+  defdelegate defmock(name, options), to: Mox
 
   @doc """
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
@@ -204,58 +200,42 @@ defmodule Hammox do
   @doc """
   See [Mox.set_mox_from_context/1](https://hexdocs.pm/mox/Mox.html#set_mox_from_context/1).
   """
-  def set_mox_from_context(context) do
-    Mox.set_mox_from_context(context)
-  end
+  defdelegate set_mox_from_context(context), to: Mox
 
   @doc """
   See [Mox.set_mox_global/1](https://hexdocs.pm/mox/Mox.html#set_mox_global/1).
   """
-  def set_mox_global(context \\ %{}) do
-    Mox.set_mox_global(context)
-  end
+  defdelegate set_mox_global(context \\ %{}), to: Mox
 
   @doc """
   See [Mox.set_mox_private/1](https://hexdocs.pm/mox/Mox.html#set_mox_private/1).
   """
-  def set_mox_private(context \\ %{}) do
-    Mox.set_mox_private(context)
-  end
+  defdelegate set_mox_private(context \\ %{}), to: Mox
 
   @doc """
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
-  def stub(mock, name, code) do
-    Mox.stub(mock, name, code)
-  end
+  defdelegate stub(mock, name, code), to: Mox
 
   @doc """
   See [Mox.stub_with/2](https://hexdocs.pm/mox/Mox.html#stub_with/2).
   """
-  def stub_with(mock, module) do
-    Mox.stub_with(mock, module)
-  end
+  defdelegate stub_with(mock, module), to: Mox
 
   @doc """
   See [Mox.verify!/0](https://hexdocs.pm/mox/Mox.html#verify!/0).
   """
-  def verify!() do
-    Mox.verify!()
-  end
+  defdelegate verify!(), to: Mox
 
   @doc """
   See [Mox.verify!/1](https://hexdocs.pm/mox/Mox.html#verify!/1).
   """
-  def verify!(mock) do
-    Mox.verify!(mock)
-  end
+  defdelegate verify!(mock), to: Mox
 
   @doc """
   See [Mox.verify_on_exit!/1](https://hexdocs.pm/mox/Mox.html#verify_on_exit!/1).
   """
-  def verify_on_exit!(context \\ %{}) do
-    Mox.verify_on_exit!(context)
-  end
+  defdelegate verify_on_exit!(context \\ %{}), to: Mox
 
   @doc since: "0.1.0"
   @doc """
