@@ -161,7 +161,7 @@ defmodule Hammox do
           behaviour_name :: module(),
           funs :: [{atom(), arity() | [arity()]}]
         ) ::
-          fun()
+          map()
   def protect(module_name, behaviour_name, funs)
       when is_atom(module_name) and is_atom(behaviour_name) and is_list(funs) do
     funs
