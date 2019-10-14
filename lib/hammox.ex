@@ -12,157 +12,7 @@ defmodule Hammox do
 
   alias Hammox.Utils
   alias Hammox.TypeEngine
-
-  defmodule TypeMatchError do
-    @moduledoc false
-    defexception [:message]
-
-    @impl true
-    def exception({:error, reasons}) do
-      %__MODULE__{
-        message: "\n" <> message_string(reasons)
-      }
-    end
-
-    defp human_reason({:arg_type_mismatch, name, index, value, type}) do
-      "#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{
-        Ordinal.ordinalize(index + 1)
-      } parameter#{if name, do: " \"" <> to_string(name) <> "\""}'s type #{type_to_string(type)}."
-    end
-
-    defp human_reason({:return_type_mismatch, value, type}) do
-      "Returned value #{inspect(value)} does not match type #{type_to_string(type)}."
-    end
-
-    defp human_reason({:tuple_elem_type_mismatch, index, elem, elem_type}) do
-      "#{Ordinal.ordinalize(index + 1)} tuple element #{inspect(elem)} does not match #{
-        Ordinal.ordinalize(index + 1)
-      } element type #{type_to_string(elem_type)}."
-    end
-
-    defp human_reason({:elem_type_mismatch, index, elem, elem_type}) do
-      "Element #{inspect(elem)} at index #{index} does not match element type #{
-        type_to_string(elem_type)
-      }."
-    end
-
-    defp human_reason({:empty_list_type_mismatch, type}) do
-      "Got an empty list but expected #{type_to_string(type)}."
-    end
-
-    defp human_reason({:proper_list_type_mismatch, type}) do
-      "Got a proper list but expected #{type_to_string(type)}."
-    end
-
-    defp human_reason({:improper_list_type_mismatch, type}) do
-      "Got an improper list but expected #{type_to_string(type)}."
-    end
-
-    defp human_reason({:improper_list_terminator_type_mismatch, terminator, terminator_type}) do
-      "Improper list terminator #{inspect(terminator)} does not match terminator type #{
-        type_to_string(terminator_type)
-      }."
-    end
-
-    defp human_reason({:function_arity_type_mismatch, expected, actual}) do
-      "Expected function to have arity #{expected} but got #{actual}."
-    end
-
-    defp human_reason({:type_mismatch, value, type}) do
-      "Value #{inspect(value)} does not match type #{type_to_string(type)}."
-    end
-
-    defp human_reason({:map_key_type_mismatch, key, key_types}) when is_list(key_types) do
-      "Map key #{inspect(key)} does not match any of the allowed map key types #{
-        key_types
-        |> Enum.map(&type_to_string/1)
-        |> Enum.join(", ")
-      }."
-    end
-
-    defp human_reason({:map_key_type_mismatch, key, key_type}) do
-      "Map key #{inspect(key)} does not match map key type #{type_to_string(key_type)}."
-    end
-
-    defp human_reason({:map_value_type_mismatch, key, value, value_types})
-         when is_list(value_types) do
-      "Map value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed map value types #{
-        value_types
-        |> Enum.map(&type_to_string/1)
-        |> Enum.join(", ")
-      }."
-    end
-
-    defp human_reason({:map_value_type_mismatch, key, value, value_type}) do
-      "Map value #{inspect(value)} for key #{inspect(key)} does not match map value type #{
-        type_to_string(value_type)
-      }."
-    end
-
-    defp human_reason({:required_field_unfulfilled_map_type_mismatch, entry_type}) do
-      "Could not find a map entry matching #{type_to_string(entry_type)}."
-    end
-
-    defp human_reason({:struct_name_type_mismatch, expected_struct_name}) do
-      "Expected the value to be #{Utils.module_to_string(expected_struct_name)} struct."
-    end
-
-    defp human_reason({:module_fetch_failure, module_name}) do
-      "Could not load module #{Utils.module_to_string(module_name)}."
-    end
-
-    defp human_reason({:remote_type_fetch_failure, {module_name, type_name, arity}}) do
-      "Could not find type #{type_name}/#{arity} in #{Utils.module_to_string(module_name)}."
-    end
-
-    defp human_reason({:protocol_type_mismatch, value, protocol_name}) do
-      "Value #{inspect(value)} does not implement the #{protocol_name} protocol."
-    end
-
-    defp message_string(reasons) when is_list(reasons) do
-      reasons
-      |> Enum.zip(0..length(reasons))
-      |> Enum.map(fn {reason, index} ->
-        reason
-        |> human_reason()
-        |> leftpad(index)
-      end)
-      |> Enum.join("\n")
-    end
-
-    defp message_string(reason) when is_tuple(reason) do
-      message_string([reason])
-    end
-
-    defp leftpad(string, level) do
-      padding =
-        for(_ <- 0..level, do: "  ")
-        |> Enum.drop(1)
-        |> Enum.join()
-
-      padding <> string
-    end
-
-    defp type_to_string({:type, _, :map_field_exact, [type1, type2]}) do
-      "required(#{type_to_string(type1)}) => #{type_to_string(type2)}"
-    end
-
-    defp type_to_string({:type, _, :map_field_assoc, [type1, type2]}) do
-      "optional(#{type_to_string(type1)}) => #{type_to_string(type2)}"
-    end
-
-    defp type_to_string(type) do
-      # We really want to access Code.Typespec.typespec_to_quoted/1 here but it's
-      # private... this hack needs to suffice.
-      [_, type_string] =
-        {:foo, type, []}
-        |> Code.Typespec.type_to_quoted()
-        |> Macro.to_string()
-        |> String.split(" :: ")
-
-      type_string
-    end
-  end
+  alias Hammox.TypeMatchError
 
   defmodule TypespecNotFoundError do
     @moduledoc false
@@ -172,16 +22,12 @@ defmodule Hammox do
   @doc """
   See [Mox.allow/3](https://hexdocs.pm/mox/Mox.html#allow/3).
   """
-  def allow(mock, owner_pid, allowed_via) do
-    Mox.allow(mock, owner_pid, allowed_via)
-  end
+  defdelegate allow(mock, owner_pid, allowed_via), to: Mox
 
   @doc """
   See [Mox.defmock/2](https://hexdocs.pm/mox/Mox.html#defmock/2).
   """
-  def defmock(name, options) do
-    Mox.defmock(name, options)
-  end
+  defdelegate defmock(name, options), to: Mox
 
   @doc """
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
@@ -204,58 +50,42 @@ defmodule Hammox do
   @doc """
   See [Mox.set_mox_from_context/1](https://hexdocs.pm/mox/Mox.html#set_mox_from_context/1).
   """
-  def set_mox_from_context(context) do
-    Mox.set_mox_from_context(context)
-  end
+  defdelegate set_mox_from_context(context), to: Mox
 
   @doc """
   See [Mox.set_mox_global/1](https://hexdocs.pm/mox/Mox.html#set_mox_global/1).
   """
-  def set_mox_global(context \\ %{}) do
-    Mox.set_mox_global(context)
-  end
+  defdelegate set_mox_global(context \\ %{}), to: Mox
 
   @doc """
   See [Mox.set_mox_private/1](https://hexdocs.pm/mox/Mox.html#set_mox_private/1).
   """
-  def set_mox_private(context \\ %{}) do
-    Mox.set_mox_private(context)
-  end
+  defdelegate set_mox_private(context \\ %{}), to: Mox
 
   @doc """
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
-  def stub(mock, name, code) do
-    Mox.stub(mock, name, code)
-  end
+  defdelegate stub(mock, name, code), to: Mox
 
   @doc """
   See [Mox.stub_with/2](https://hexdocs.pm/mox/Mox.html#stub_with/2).
   """
-  def stub_with(mock, module) do
-    Mox.stub_with(mock, module)
-  end
+  defdelegate stub_with(mock, module), to: Mox
 
   @doc """
   See [Mox.verify!/0](https://hexdocs.pm/mox/Mox.html#verify!/0).
   """
-  def verify!() do
-    Mox.verify!()
-  end
+  defdelegate verify!(), to: Mox
 
   @doc """
   See [Mox.verify!/1](https://hexdocs.pm/mox/Mox.html#verify!/1).
   """
-  def verify!(mock) do
-    Mox.verify!(mock)
-  end
+  defdelegate verify!(mock), to: Mox
 
   @doc """
   See [Mox.verify_on_exit!/1](https://hexdocs.pm/mox/Mox.html#verify_on_exit!/1).
   """
-  def verify_on_exit!(context \\ %{}) do
-    Mox.verify_on_exit!(context)
-  end
+  defdelegate verify_on_exit!(context \\ %{}), to: Mox
 
   @doc since: "0.1.0"
   @doc """
@@ -331,16 +161,14 @@ defmodule Hammox do
           behaviour_name :: module(),
           funs :: [{atom(), arity() | [arity()]}]
         ) ::
-          fun()
+          map()
   def protect(module_name, behaviour_name, funs)
       when is_atom(module_name) and is_atom(behaviour_name) and is_list(funs) do
     funs
-    |> Enum.map(fn
-      {function_name, arity} when is_integer(arity) -> {function_name, [arity]}
-      {function_name, arities} when is_list(arities) -> {function_name, arities}
-    end)
-    |> Enum.map(fn {function_name, arities} ->
-      Enum.map(arities, fn arity ->
+    |> Enum.flat_map(fn {function_name, arity_or_arities} ->
+      arity_or_arities
+      |> List.wrap()
+      |> Enum.map(fn arity ->
         key =
           function_name
           |> Atom.to_string()
@@ -351,7 +179,6 @@ defmodule Hammox do
         {key, value}
       end)
     end)
-    |> List.flatten()
     |> Enum.into(%{})
   end
 
