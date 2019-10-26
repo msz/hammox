@@ -1,0 +1,37 @@
+version: 2
+jobs:
+  ci:
+    docker:
+      - image: circleci/elixir:1.9
+        environment:
+          MIX_ENV: test
+    steps:
+      - checkout
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+
+      - restore_cache:
+          keys:
+            - v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+
+      - restore_cache:
+          keys:
+            - v1-build-cache-{{ .Branch }}
+
+      - run: mix do deps.get, compile
+
+      - save_cache:
+          key: v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths: "deps"
+
+      - save_cache:
+          key: v1-build-cache-{{ .Branch }}
+          paths: "_build"
+
+      - run: mix ci
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - ci
