@@ -42,7 +42,12 @@ defmodule Hammox.MixProject do
     [
       {:mox, "~> 0.5"},
       {:ordinal, "~> 0.1"},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:credo,
+       github: "msz/credo",
+       ref: "fix-elixir-formatter-spacing-conflict",
+       only: [:dev, :test],
+       runtime: false}
     ]
   end
 
