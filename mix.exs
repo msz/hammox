@@ -34,7 +34,7 @@ defmodule Hammox.MixProject do
 
   defp aliases do
     [
-      ci: ["format --check-formatted", "compile --warnings-as-errors", "test"]
+      ci: ["format --check-formatted", "credo --strict", "compile --warnings-as-errors", "test"]
     ]
   end
 
