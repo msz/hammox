@@ -11,6 +11,7 @@ defmodule Hammox.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
 
       # Docs
       name: "Hammox",
@@ -28,6 +29,12 @@ defmodule Hammox.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp aliases do
+    [
+      ci: ["format --check-formatted", "compile --warnings-as-errors", "test"]
     ]
   end
 
