@@ -28,6 +28,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_binary_function_literal() :: (:a, :b -> :ok)
   @callback foo_any_arity_function_literal() :: (... -> :ok)
   @callback foo_integer_literal() :: 1
+  @callback foo_neg_integer_literal() :: -1
   @callback foo_integer_range_literal() :: 1..10
   @callback foo_list_literal :: [atom()]
   @callback foo_empty_list_literal() :: []
