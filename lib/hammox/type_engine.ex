@@ -301,6 +301,14 @@ defmodule Hammox.TypeEngine do
     type_mismatch(value, type)
   end
 
+  def match_type(value, {:op, _, :-, {:integer, _, integer}}) when value == -integer do
+    :ok
+  end
+
+  def match_type(value, {:op, _, :-, {:integer, _, _}} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]})
       when value in low..high do
     :ok
