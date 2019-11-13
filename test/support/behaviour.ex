@@ -97,6 +97,8 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_behaviour_user_type :: type_from_behaviour()
   @callback foo_ann_type_user_type(arg :: type_from_behaviour) :: :ok
 
+  @callback foo_annotated_return_type() :: return_value :: :return_type
+
   @callback foo_union() :: :a | :b
   @callback foo_uneven_union() :: :a | %{a: 1}
 

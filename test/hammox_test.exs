@@ -1039,6 +1039,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "annotated return type" do
+    test "pass" do
+      assert_pass(:foo_annotated_return_type, :return_type)
+    end
+
+    test "fail" do
+      assert_fail(:foo_annotated_return_type, :other_type)
+    end
+  end
+
   describe "arg type checking" do
     test "no args pass" do
       TestMock |> expect(:foo_no_arg, fn -> :ok end)

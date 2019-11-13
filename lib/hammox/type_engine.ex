@@ -625,6 +625,10 @@ defmodule Hammox.TypeEngine do
     end
   end
 
+  def match_type(value, {:ann_type, _, [_, type]}) do
+    match_type(value, type)
+  end
+
   defp maybe_match_protocol(
          value,
          {:remote_type, _, [{:atom, _, module_name}, {:atom, _, :t}, []]}
