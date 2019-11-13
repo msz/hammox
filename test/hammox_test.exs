@@ -1049,6 +1049,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "annotated type in a container" do
+    test "pass" do
+      assert_pass(:foo_annotated_type_in_container, {:correct_type})
+    end
+
+    test "fail" do
+      assert_fail(:foo_annotated_type_in_container, {:incorrect_type})
+    end
+  end
+
   describe "arg type checking" do
     test "no args pass" do
       TestMock |> expect(:foo_no_arg, fn -> :ok end)
