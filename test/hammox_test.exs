@@ -1090,7 +1090,7 @@ defmodule HammoxTest do
 
       assert_raise(
         Hammox.TypeMatchError,
-        ~r/1st argument value "bar" does not match 1st parameter "arg1"'s type atom()./,
+        ~r/1st argument value "bar" does not match 1st parameter's type atom\(\) \("arg1"\)/,
         fn -> TestMock.foo_named_arg("bar") end
       )
     end
@@ -1105,7 +1105,7 @@ defmodule HammoxTest do
 
       assert_raise(
         Hammox.TypeMatchError,
-        ~r/2nd argument value "baz" does not match 2nd parameter "arg2"'s type number()./,
+        ~r/2nd argument value "baz" does not match 2nd parameter's type number\(\) \("arg2"\)/,
         fn -> TestMock.foo_named_and_unnamed_arg(:bar, "baz") end
       )
     end

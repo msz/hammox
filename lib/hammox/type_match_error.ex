@@ -11,10 +11,10 @@ defmodule Hammox.TypeMatchError do
     }
   end
 
-  defp human_reason({:arg_type_mismatch, name, index, value, type}) do
+  defp human_reason({:arg_type_mismatch, index, value, type}) do
     "#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{
       Ordinal.ordinalize(index + 1)
-    } parameter#{if name, do: " \"" <> to_string(name) <> "\""}'s type #{type_to_string(type)}."
+    } parameter's type #{type_to_string(type)}."
   end
 
   defp human_reason({:return_type_mismatch, value, type}) do
