@@ -11,10 +11,10 @@ defmodule Hammox.TypeMatchError do
     }
   end
 
-  defp human_reason({:arg_type_mismatch, name, index, value, type}) do
+  defp human_reason({:arg_type_mismatch, index, value, type}) do
     "#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{
       Ordinal.ordinalize(index + 1)
-    } parameter#{if name, do: " \"" <> to_string(name) <> "\""}'s type #{type_to_string(type)}."
+    } parameter's type #{type_to_string(type)}."
   end
 
   defp human_reason({:return_type_mismatch, value, type}) do
@@ -141,12 +141,13 @@ defmodule Hammox.TypeMatchError do
   defp type_to_string(type) do
     # We really want to access Code.Typespec.typespec_to_quoted/1 here but it's
     # private... this hack needs to suffice.
-    [_, type_string] =
-      {:foo, type, []}
-      |> Code.Typespec.type_to_quoted()
-      |> Macro.to_string()
-      |> String.split(" :: ")
-
-    type_string
+    {:foo, type, []}
+    |> Code.Typespec.type_to_quoted()
+    |> Macro.to_string()
+    |> String.split(" :: ")
+    |> case do
+      [_, type_string] -> type_string
+      [_, type_name, type_string] -> "#{type_string} (\"#{type_name}\")"
+    end
   end
 end

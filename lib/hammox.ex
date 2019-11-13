@@ -290,11 +290,11 @@ defmodule Hammox do
     args
     |> Enum.zip(0..(length(args) - 1))
     |> Enum.map(fn {arg, index} ->
-      {arg_name, arg_type} = arg_typespec(typespec, index)
+      arg_type = arg_typespec(typespec, index)
 
       case TypeEngine.match_type(arg, arg_type) do
         {:error, reasons} ->
-          {:error, [{:arg_type_mismatch, arg_name, index, arg, arg_type} | reasons]}
+          {:error, [{:arg_type_mismatch, index, arg, arg_type} | reasons]}
 
         :ok ->
           :ok
@@ -356,11 +356,6 @@ defmodule Hammox do
 
   defp arg_typespec(function_typespec, arg_index) do
     {:type, _, :fun, [{:type, _, :product, arg_typespecs}, _]} = function_typespec
-
-    case Enum.at(arg_typespecs, arg_index) do
-      {:ann_type, _, [{:var, _, arg_name}, arg_type]} -> {arg_name, arg_type}
-      {:type, _, _, _} = arg_type -> {nil, arg_type}
-      {:remote_type, _, _} = arg_type -> {nil, arg_type}
-    end
+    Enum.at(arg_typespecs, arg_index)
   end
 end

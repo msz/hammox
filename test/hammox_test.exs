@@ -1039,6 +1039,26 @@ defmodule HammoxTest do
     end
   end
 
+  describe "annotated return type" do
+    test "pass" do
+      assert_pass(:foo_annotated_return_type, :return_type)
+    end
+
+    test "fail" do
+      assert_fail(:foo_annotated_return_type, :other_type)
+    end
+  end
+
+  describe "annotated type in a container" do
+    test "pass" do
+      assert_pass(:foo_annotated_type_in_container, {:correct_type})
+    end
+
+    test "fail" do
+      assert_fail(:foo_annotated_type_in_container, {:incorrect_type})
+    end
+  end
+
   describe "arg type checking" do
     test "no args pass" do
       TestMock |> expect(:foo_no_arg, fn -> :ok end)
@@ -1070,7 +1090,7 @@ defmodule HammoxTest do
 
       assert_raise(
         Hammox.TypeMatchError,
-        ~r/1st argument value "bar" does not match 1st parameter "arg1"'s type atom()./,
+        ~r/1st argument value "bar" does not match 1st parameter's type atom\(\) \("arg1"\)/,
         fn -> TestMock.foo_named_arg("bar") end
       )
     end
@@ -1085,7 +1105,7 @@ defmodule HammoxTest do
 
       assert_raise(
         Hammox.TypeMatchError,
-        ~r/2nd argument value "baz" does not match 2nd parameter "arg2"'s type number()./,
+        ~r/2nd argument value "baz" does not match 2nd parameter's type number\(\) \("arg2"\)/,
         fn -> TestMock.foo_named_and_unnamed_arg(:bar, "baz") end
       )
     end
