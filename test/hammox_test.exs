@@ -1133,6 +1133,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "nested parametrized types" do
+    test "pass" do
+      assert_pass(:foo_nested_param_types, :param)
+    end
+
+    test "fail" do
+      assert_fail(:foo_nested_param_types, :wrong_param)
+    end
+  end
+
   defp assert_pass(function_name, value) do
     TestMock |> expect(function_name, fn -> value end)
     assert value == apply(TestMock, function_name, [])

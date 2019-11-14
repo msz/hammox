@@ -24,6 +24,9 @@ defmodule Hammox.Utils do
       {:type, position, name, params} when is_list(params) ->
         {:type, position, name, Enum.map(params, fn param -> type_map(param, map_fun) end)}
 
+      {:user_type, position, name, params} when is_list(params) ->
+        {:user_type, position, name, Enum.map(params, fn param -> type_map(param, map_fun) end)}
+
       {:ann_type, position, [var, ann_type]} ->
         {:ann_type, position, [var, type_map(ann_type, map_fun)]}
 
