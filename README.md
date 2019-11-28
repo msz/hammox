@@ -1,5 +1,9 @@
 # Hammox
 
+[Hex package](https://hex.pm/packages/hammox)
+
+[API docs](https://hexdocs.pm/hammox/Hammox.html)
+
 Hammox is a library for rigorous unit testing using mocks, explicit
 behaviours and contract tests. You can use it to ensure both your mocks and
 implementations fulfill the same contract.
