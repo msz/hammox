@@ -6,4 +6,6 @@ defmodule Hammox.Test.Struct do
 
   @type my_type(a) :: list(a)
   @type my_type_user() :: [my_type(:foo_type)]
+
+  @type ok(t) :: {:ok, t}
 end
