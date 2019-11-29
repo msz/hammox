@@ -30,6 +30,10 @@ defmodule Hammox.Utils do
       {:ann_type, position, [var, ann_type]} ->
         {:ann_type, position, [var, type_map(ann_type, map_fun)]}
 
+      {:remote_type, position, [module_name, name, params]} ->
+        {:remote_type, position,
+         [module_name, name, Enum.map(params, fn param -> type_map(param, map_fun) end)]}
+
       other ->
         other
     end

@@ -1059,6 +1059,16 @@ defmodule HammoxTest do
     end
   end
 
+  describe "local type as remote type param" do
+    test "pass" do
+      assert_pass(:foo_remote_param_type, {:ok, :local})
+    end
+
+    test "fail" do
+      assert_fail(:foo_remote_param_type, {:ok, :other})
+    end
+  end
+
   describe "arg type checking" do
     test "no args pass" do
       TestMock |> expect(:foo_no_arg, fn -> :ok end)
