@@ -579,6 +579,10 @@ defmodule HammoxTest do
       assert_fail(:foo_struct_literal, %{foo: :bar})
     end
 
+    test "fail different struct" do
+      assert_fail(:foo_struct_literal, %Hammox.Test.OtherStruct{})
+    end
+
     test "pass default struct" do
       assert_pass(:foo_struct_literal, %Hammox.Test.Struct{})
     end
