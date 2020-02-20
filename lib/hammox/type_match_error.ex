@@ -94,6 +94,12 @@ defmodule Hammox.TypeMatchError do
     "Expected the value to be #{Utils.module_to_string(expected_struct_name)} struct."
   end
 
+  defp human_reason({:struct_name_type_mismatch, actual_struct_name, expected_struct_name}) do
+    "Expected the value to be a #{Utils.module_to_string(expected_struct_name)}, got a #{
+      Utils.module_to_string(actual_struct_name)
+    }"
+  end
+
   defp human_reason({:module_fetch_failure, module_name}) do
     "Could not load module #{Utils.module_to_string(module_name)}."
   end
