@@ -453,7 +453,7 @@ defmodule Hammox.TypeEngine do
 
         case unfulfilled_type do
           {{_, {{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}}, _} ->
-            {:error, [{:struct_name_type_mismatch, expected_struct_name}]}
+            {:error, [{:struct_name_type_mismatch, nil, expected_struct_name}]}
 
           {{_, {key_type, value_type}}, _} ->
             {:error,
