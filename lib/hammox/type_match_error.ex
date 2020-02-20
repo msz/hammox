@@ -90,7 +90,7 @@ defmodule Hammox.TypeMatchError do
     "Could not find a map entry matching #{type_to_string(entry_type)}."
   end
 
-  defp human_reason({:struct_name_type_mismatch, expected_struct_name}) do
+  defp human_reason({:struct_name_type_mismatch, nil, expected_struct_name}) do
     "Expected the value to be #{Utils.module_to_string(expected_struct_name)} struct."
   end
 
