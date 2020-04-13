@@ -24,7 +24,7 @@ delete it from your list of dependencies in `mix.exs`. Then add `:hammox`:
 ```elixir
 def deps do
   [
-    {:hammox, "~> 0.2.2"}
+    {:hammox, "~> 0.2"}
   ]
 end
 ```
