@@ -113,4 +113,9 @@ defmodule Hammox.Test.Behaviour do
   @type param_type_1(arg1) :: arg1
   @type param_type_2(arg2) :: param_type_1(arg2)
   @callback foo_nested_param_types() :: param_type_2(:param)
+
+  @type multiline_param_type(param) :: %{
+          value: param
+        }
+  @callback foo_multiline_param_type() :: multiline_param_type(:arg)
 end

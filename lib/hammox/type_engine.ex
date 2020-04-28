@@ -672,8 +672,10 @@ defmodule Hammox.TypeEngine do
   end
 
   defp fill_type_var(type, var, arg) do
+    {:var, _, var_name} = var
+
     Utils.type_map(type, fn
-      ^var -> arg
+      {:var, _, ^var_name} -> arg
       other -> other
     end)
   end

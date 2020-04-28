@@ -1157,6 +1157,12 @@ defmodule HammoxTest do
     end
   end
 
+  describe "multiline parametrized types" do
+    test "works when param usage is on a line other than declaration line" do
+      assert_pass(:foo_multiline_param_type, %{value: :arg})
+    end
+  end
+
   defp assert_pass(function_name, value) do
     TestMock |> expect(function_name, fn -> value end)
     assert value == apply(TestMock, function_name, [])
