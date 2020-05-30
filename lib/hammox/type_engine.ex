@@ -3,6 +3,8 @@ defmodule Hammox.TypeEngine do
 
   alias Hammox.Utils
 
+  @type_kinds [:type, :typep, :opaque]
+
   def match_type(value, {:type, _, :union, union_types} = union) when is_list(union_types) do
     results =
       Enum.reduce_while(union_types, [], fn type, reason_stacks ->
@@ -653,7 +655,8 @@ defmodule Hammox.TypeEngine do
        )
        when is_atom(module_name) and is_atom(type_name) and is_list(args) do
     with {:ok, types} <- fetch_types(module_name),
-         {:ok, {:type, {_name, type, vars}}} <- get_type(types, type_name, length(args)) do
+         {:ok, {type_kind, {_name, type, vars}}} when type_kind in @type_kinds <-
+           get_type(types, type_name, length(args)) do
       resolved_type =
         args
         |> Enum.zip(vars)
@@ -688,7 +691,8 @@ defmodule Hammox.TypeEngine do
   end
 
   defp get_type(type_list, type_name, arity) do
-    case Enum.find(type_list, fn {:type, {name, _type, params}} ->
+    case Enum.find(type_list, fn {type_kind, {name, _type, params}}
+                                 when type_kind in @type_kinds ->
            name == type_name and length(params) == arity
          end) do
       nil -> {:error, {:type_not_found, {type_name, arity}}}

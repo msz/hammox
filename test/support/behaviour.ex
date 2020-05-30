@@ -118,4 +118,11 @@ defmodule Hammox.Test.Behaviour do
           value: param
         }
   @callback foo_multiline_param_type() :: multiline_param_type(:arg)
+
+  @typep private_type :: :private_value
+  @type type_including_private_type :: private_type()
+  @callback foo_private_type() :: type_including_private_type()
+
+  @opaque opaque_type :: :opaque_value
+  @callback foo_opaque_type() :: opaque_type
 end

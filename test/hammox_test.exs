@@ -1163,6 +1163,26 @@ defmodule HammoxTest do
     end
   end
 
+  describe "private types" do
+    test "pass" do
+      assert_pass(:foo_private_type, :private_value)
+    end
+
+    test "fail" do
+      assert_fail(:foo_private_type, :other)
+    end
+  end
+
+  describe "opaque types" do
+    test "pass" do
+      assert_pass(:foo_opaque_type, :opaque_value)
+    end
+
+    test "fail" do
+      assert_fail(:foo_opaque_type, :other)
+    end
+  end
+
   defp assert_pass(function_name, value) do
     TestMock |> expect(function_name, fn -> value end)
     assert value == apply(TestMock, function_name, [])
