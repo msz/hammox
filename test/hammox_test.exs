@@ -3,10 +3,7 @@ defmodule HammoxTest do
 
   import Hammox
 
-  setup_all do
-    defmock(TestMock, for: Hammox.Test.Behaviour)
-    :ok
-  end
+  defmock(TestMock, for: Hammox.Test.Behaviour)
 
   describe "protect/2" do
     test "returns function protected from contract errors" do
