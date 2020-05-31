@@ -1,4 +1,5 @@
 defmodule Hammox.Test.Struct do
+  @moduledoc false
   defstruct [:foo]
 
   @type my_list() :: list()

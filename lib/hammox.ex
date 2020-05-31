@@ -10,9 +10,9 @@ defmodule Hammox do
   v0.1.0, the only Hammox-specific functions are `protect/2` and `protect/3`.
   """
 
-  alias Hammox.Utils
   alias Hammox.TypeEngine
   alias Hammox.TypeMatchError
+  alias Hammox.Utils
 
   defmodule TypespecNotFoundError do
     @moduledoc false

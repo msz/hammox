@@ -1,4 +1,5 @@
 defmodule Hammox.Test.Behaviour do
+  @moduledoc false
   @callback foo_any() :: any()
   @callback foo_none() :: none()
   @callback foo_atom() :: atom()
