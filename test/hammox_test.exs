@@ -1197,44 +1197,4 @@ defmodule HammoxTest do
       apply(TestMock, function_name, [])
     end)
   end
-
-  # TODO: move this to a separate type engine test file
-
-  # describe "resolve_remote_type/1" do
-  #   test "constructs a type from the remote type and args" do
-  #     assert {:ok, {:type, _, :list, [{:type, _, :list, [{:type, _, :number, []}]}]}} =
-  #              Hammox.resolve_remote_type(
-  #                {:remote_type, 0,
-  #                 [
-  #                   {:atom, 0, Hammox.Test.Struct},
-  #                   {:atom, 0, :my_list},
-  #                   [{:type, 0, :number, []}]
-  #                 ]}
-  #              )
-  #   end
-
-  #   test "error when module cannot be fetched" do
-  #     assert {:error, {:module_fetch_failure, Hammox.Test.NonexistentStruct}} ==
-  #              Hammox.resolve_remote_type(
-  #                {:remote_type, 0,
-  #                 [
-  #                   {:atom, 0, Hammox.Test.NonexistentStruct},
-  #                   {:atom, 0, :my_list},
-  #                   [{:type, 0, :number, []}]
-  #                 ]}
-  #              )
-  #   end
-
-  #   test "error when type cannot be found" do
-  #     assert {:error, {:remote_type_fetch_failure, {Hammox.Test.Struct, :nonexistent_type, 1}}} ==
-  #              Hammox.resolve_remote_type(
-  #                {:remote_type, 0,
-  #                 [
-  #                   {:atom, 0, Hammox.Test.Struct},
-  #                   {:atom, 0, :nonexistent_type},
-  #                   [{:type, 0, :number, []}]
-  #                 ]}
-  #              )
-  #   end
-  # end
 end
