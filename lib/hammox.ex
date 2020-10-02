@@ -109,9 +109,24 @@ defmodule Hammox do
 
   add_2.(1.5, 2.5) # throws Hammox.TypeMatchError
   ```
+
+  If pass module and list instead of MFA and module works like `protect/3`
+  ```elixir
+  # calling this
+  Hammox.protect(SomeModule, foo: 1)
+  # works same as this
+  Hammox.protect(SomeModule, SomeModule, foo: 1)
+  ```
   """
-  @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
+  @spec protect(
+          mfa() | module(),
+          module() | [{atom(), arity() | [arity()]}]
+        ) ::
+          fun() | map()
   def protect(mfa, behaviour_name)
+
+  def protect(module_name, funs) when is_atom(module_name and is_list(funs)),
+    do: protect(module_name, module_name, funs)
 
   def protect({module_name, function_name, arity}, behaviour_name)
       when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
