@@ -89,6 +89,34 @@ defmodule Hammox do
 
   @doc since: "0.1.0"
   @doc """
+  Same as `protect/3`, but decorate all public functions inside the module.
+
+  Example:
+
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+    def add(a, b), do: a + b
+    @callback add(integer(), integer(), integer()) :: integer()
+    def add(a, b, c), do: a + b + c
+    @callback multiply(integer(), integer()) :: integer()
+    def multiply(a, b), do: a * b
+  end
+
+  %{
+    add_2: add_2,
+    add_3: add_3,
+    multiply_2: multiply_2
+  } = Hammox.protect(Calculator)
+  """
+  @spec protect(module_name :: module()) :: map()
+  def protect(module_name) when is_atom(module_name) do
+    funs = module_name.__info__(:functions)
+    protect(module_name, module_name, funs)
+  end
+
+  @doc since: "0.1.0"
+  @doc """
   Takes the function provided by a module, function, arity tuple and
   decorates it with Hammox type checking.
 

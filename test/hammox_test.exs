@@ -5,6 +5,13 @@ defmodule HammoxTest do
 
   defmock(TestMock, for: Hammox.Test.Behaviour)
 
+  describe "protect/1" do
+    test "decorate all functions inside the module" do
+      assert %{other_foo_0: _, other_foo_1: _, foo_0: _} =
+        Hammox.protect(Hammox.Test.BehaviourImplementation)
+    end
+  end
+
   describe "protect/2" do
     test "returns function protected from contract errors" do
       fun = Hammox.protect({Hammox.Test.SmallImplementation, :foo, 0}, Hammox.Test.SmallBehaviour)
