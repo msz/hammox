@@ -11,4 +11,8 @@ defmodule Hammox.Test.SmallImplementation do
   def other_foo(_) do
     1
   end
+
+  def nospec_fun() do
+    1
+  end
 end
