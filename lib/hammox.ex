@@ -118,16 +118,13 @@ defmodule Hammox do
   Hammox.protect(SomeModule, SomeModule, foo: 1)
   ```
   """
-  @spec protect(
-          mfa() | module(),
-          module() | [{atom(), arity() | [arity()]}]
-        ) ::
-          fun() | map()
   def protect(mfa, behaviour_name)
 
+  @spec protect(module_name :: module(), funs :: [{atom(), arity() | [arity()]}]) :: map()
   def protect(module_name, funs) when is_atom(module_name and is_list(funs)),
     do: protect(module_name, module_name, funs)
 
+  @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
   def protect({module_name, function_name, arity}, behaviour_name)
       when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
              is_atom(behaviour_name) do
