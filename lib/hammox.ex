@@ -110,11 +110,13 @@ defmodule Hammox do
   add_2.(1.5, 2.5) # throws Hammox.TypeMatchError
   ```
 
-  If pass module and list instead of MFA and module works like `protect/3`
+  A common tactic is to put behaviour callbacks and the "default"
+  implementations for these callbacks in the same module. For these kinds of
+  modules, you can also use `protect/2` as a shortcut for `protect/3`:
   ```elixir
   # calling this
   Hammox.protect(SomeModule, foo: 1)
-  # works same as this
+  # works the same as this
   Hammox.protect(SomeModule, SomeModule, foo: 1)
   ```
   """
