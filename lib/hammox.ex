@@ -127,9 +127,13 @@ defmodule Hammox do
     do: protect(module_name, module_name, funs)
 
   @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
-  def protect({module_name, function_name, arity}, behaviour_name)
+  def protect({module_name, function_name, arity} = mfa, behaviour_name)
       when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
              is_atom(behaviour_name) do
+    module_exist?(module_name)
+    module_exist?(behaviour_name)
+    mfa_exist?(mfa)
+
     code = {module_name, function_name}
 
     typespecs = fetch_typespecs!(behaviour_name, function_name, arity)
@@ -371,5 +375,33 @@ defmodule Hammox do
   defp arg_typespec(function_typespec, arg_index) do
     {:type, _, :fun, [{:type, _, :product, arg_typespecs}, _]} = function_typespec
     Enum.at(arg_typespecs, arg_index)
+  end
+
+  defp module_exist?(module_name) do
+    case Code.ensure_compiled(module_name) do
+      {:module, _} ->
+        true
+
+      _ ->
+        raise(ArgumentError,
+          message:
+            "Could not find module #{Utils.module_to_string(module_name)}."
+        )
+    end
+  end
+
+  defp mfa_exist?({module_name, function_name, arity}) do
+    case function_exported?(module_name, function_name, arity) do
+      true ->
+        true
+
+      _ ->
+        raise(ArgumentError,
+          message:
+            "Could not find function #{Utils.module_to_string(module_name)}.#{function_name}/#{
+              arity
+            }."
+        )
+    end
   end
 end

@@ -14,7 +14,34 @@ defmodule HammoxTest do
     test "throws when typespec does not exist" do
       assert_raise(Hammox.TypespecNotFoundError, fn ->
         Hammox.protect(
-          {Hammox.Test.SmallImplementation, :nonexistent_fuc, 0},
+          {Hammox.Test.SmallImplementation, :nospec_fun, 0},
+          Hammox.Test.SmallBehaviour
+        )
+      end)
+    end
+
+    test "throws when behaviour module does not exist" do
+      assert_raise(ArgumentError, fn ->
+        Hammox.protect(
+          {Hammox.Test.SmallImplementation, :foo, 0},
+          NotExistModule
+        )
+      end)
+    end
+
+    test "throws when implementation module does not exist" do
+      assert_raise(ArgumentError, fn ->
+        Hammox.protect(
+          {NotExistModule, :foo, 0},
+          Hammox.Test.SmallBehaviour
+        )
+      end)
+    end
+
+    test "throws when implementation function does not exist" do
+      assert_raise(ArgumentError, fn ->
+        Hammox.protect(
+          {Hammox.Test.SmallImplementation, :nonexistent_fun, 0},
           Hammox.Test.SmallBehaviour
         )
       end)
