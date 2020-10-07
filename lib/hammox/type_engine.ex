@@ -2,6 +2,7 @@ defmodule Hammox.TypeEngine do
   @moduledoc false
 
   alias Hammox.Utils
+  alias Hammox.Cache
 
   @type_kinds [:type, :typep, :opaque]
 
@@ -650,7 +651,24 @@ defmodule Hammox.TypeEngine do
     :ok
   end
 
-  defp resolve_remote_type(
+  defp resolve_remote_type(remote_type) do
+    case Cache.get(remote_type) do
+      nil ->
+        case do_resolve_remote_type(remote_type) do
+          {:ok, _} = ok ->
+            Cache.put(remote_type, ok)
+            ok
+
+          {:error, _} = error ->
+            error
+        end
+
+      ok ->
+        ok
+    end
+  end
+
+  defp do_resolve_remote_type(
          {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]}
        )
        when is_atom(module_name) and is_atom(type_name) and is_list(args) do
@@ -684,9 +702,21 @@ defmodule Hammox.TypeEngine do
   end
 
   defp fetch_types(module_name) do
-    case Code.Typespec.fetch_types(module_name) do
-      {:ok, _} = ok -> ok
-      :error -> {:error, {:module_fetch_failure, module_name}}
+    cache_key = {:types, module_name}
+
+    case Cache.get(cache_key) do
+      nil ->
+        case Code.Typespec.fetch_types(module_name) do
+          {:ok, _} = ok ->
+            Cache.put(cache_key, ok)
+            ok
+
+          :error ->
+            {:error, {:module_fetch_failure, module_name}}
+        end
+
+      ok ->
+        ok
     end
   end
 
