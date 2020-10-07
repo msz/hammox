@@ -8,7 +8,7 @@ defmodule HammoxTest do
   describe "protect/1" do
     test "decorate all functions inside the module" do
       assert %{other_foo_0: _, other_foo_1: _, foo_0: _} =
-        Hammox.protect(Hammox.Test.BehaviourImplementation)
+               Hammox.protect(Hammox.Test.BehaviourImplementation)
     end
   end
 

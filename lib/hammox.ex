@@ -412,8 +412,7 @@ defmodule Hammox do
 
       _ ->
         raise(ArgumentError,
-          message:
-            "Could not find module #{Utils.module_to_string(module_name)}."
+          message: "Could not find module #{Utils.module_to_string(module_name)}."
         )
     end
   end
