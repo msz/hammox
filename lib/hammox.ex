@@ -13,6 +13,7 @@ defmodule Hammox do
   alias Hammox.Utils
   alias Hammox.TypeEngine
   alias Hammox.TypeMatchError
+  alias Hammox.Cache
 
   defmodule TypespecNotFoundError do
     @moduledoc false
@@ -378,8 +379,31 @@ defmodule Hammox do
     end
   end
 
-  defp fetch_typespecs(behaviour_module_name, function_name, arity) do
-    {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
+  defp fetch_typespecs(behaviour_name, function_name, arity) do
+    cache_key = {:typespecs, {behaviour_name, function_name, arity}}
+
+    case Cache.get(cache_key) do
+      nil ->
+        typespecs = do_fetch_typespecs(behaviour_name, function_name, arity)
+        Cache.put(cache_key, typespecs)
+        typespecs
+
+      typespecs ->
+        typespecs
+    end
+  end
+
+  defp do_fetch_typespecs(behaviour_module_name, function_name, arity) do
+    callbacks =
+      case Cache.get({:callbacks, behaviour_module_name}) do
+        nil ->
+          {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
+          Cache.put({:callbacks, behaviour_module_name}, callbacks)
+          callbacks
+
+        callbacks ->
+          callbacks
+      end
 
     callbacks
     |> Enum.find_value([], fn
