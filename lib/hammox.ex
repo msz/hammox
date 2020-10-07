@@ -109,10 +109,24 @@ defmodule Hammox do
 
   add_2.(1.5, 2.5) # throws Hammox.TypeMatchError
   ```
+
+  A common tactic is to put behaviour callbacks and the "default"
+  implementations for these callbacks in the same module. For these kinds of
+  modules, you can also use `protect/2` as a shortcut for `protect/3`:
+  ```elixir
+  # calling this
+  Hammox.protect(SomeModule, foo: 1)
+  # works the same as this
+  Hammox.protect(SomeModule, SomeModule, foo: 1)
+  ```
   """
-  @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
   def protect(mfa, behaviour_name)
 
+  @spec protect(module_name :: module(), funs :: [{atom(), arity() | [arity()]}]) :: map()
+  def protect(module_name, funs) when is_atom(module_name and is_list(funs)),
+    do: protect(module_name, module_name, funs)
+
+  @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
   def protect({module_name, function_name, arity}, behaviour_name)
       when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
              is_atom(behaviour_name) do
