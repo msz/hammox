@@ -112,7 +112,7 @@ defmodule Hammox do
   """
   @spec protect(module_name :: module()) :: map()
   def protect(module_name) when is_atom(module_name) do
-    funs = module_name.__info__(:functions)
+    funs = get_funcs!(module_name)
     protect(module_name, module_name, funs)
   end
 
@@ -152,7 +152,7 @@ defmodule Hammox do
   def protect(mfa, behaviour_name)
 
   @spec protect(module_name :: module(), funs :: [{atom(), arity() | [arity()]}]) :: map()
-  def protect(module_name, funs) when is_atom(module_name and is_list(funs)),
+  def protect(module_name, funs) when is_atom(module_name) and is_list(funs),
     do: protect(module_name, module_name, funs)
 
   @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
@@ -167,6 +167,13 @@ defmodule Hammox do
 
     typespecs = fetch_typespecs!(behaviour_name, function_name, arity)
     protected(code, typespecs, arity)
+  end
+
+  @spec protect(implementation_name :: module(), behaviour_name :: module()) :: map()
+  def protect(implementation_name, behaviour_name)
+      when is_atom(implementation_name) and is_atom(behaviour_name) do
+    funs = get_funcs!(behaviour_name)
+    protect(implementation_name, behaviour_name, funs)
   end
 
   @doc since: "0.1.0"
@@ -394,16 +401,7 @@ defmodule Hammox do
   end
 
   defp do_fetch_typespecs(behaviour_module_name, function_name, arity) do
-    callbacks =
-      case Cache.get({:callbacks, behaviour_module_name}) do
-        nil ->
-          {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
-          Cache.put({:callbacks, behaviour_module_name}, callbacks)
-          callbacks
-
-        callbacks ->
-          callbacks
-      end
+    callbacks = fetch_callbacks(behaviour_module_name)
 
     callbacks
     |> Enum.find_value([], fn
@@ -413,6 +411,18 @@ defmodule Hammox do
     |> Enum.map(fn typespec ->
       Utils.replace_user_types(typespec, behaviour_module_name)
     end)
+  end
+
+  defp fetch_callbacks(behaviour_module_name) do
+    case Cache.get({:callbacks, behaviour_module_name}) do
+      nil ->
+        {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
+        Cache.put({:callbacks, behaviour_module_name}, callbacks)
+        callbacks
+
+      callbacks ->
+        callbacks
+    end
   end
 
   defp fetch_typespecs_for_mock(mock_name, function_name, arity)
@@ -454,5 +464,15 @@ defmodule Hammox do
             }."
         )
     end
+  end
+
+  defp get_funcs!(module_name) do
+    module_exist?(module_name)
+
+    module_name
+    |> fetch_callbacks()
+    |> Enum.map(fn {callback, _typespecs} ->
+      callback
+    end)
   end
 end
