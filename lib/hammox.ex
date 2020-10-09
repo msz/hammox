@@ -34,18 +34,16 @@ defmodule Hammox do
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
   def expect(mock, name, n \\ 1, code) do
-    arity = :erlang.fun_info(code)[:arity]
-
-    hammox_code =
-      case fetch_typespecs_for_mock(mock, name, arity) do
-        # This is really an error case where we're trying to mock a function
-        # that does not exist in the behaviour. Mox will flag it better though
-        # so just let it pass through.
-        [] -> code
-        typespecs -> protected(code, typespecs, arity)
-      end
-
+    hammox_code = wrap(mock, name, code)
     Mox.expect(mock, name, n, hammox_code)
+  end
+
+  @doc """
+  See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
+  """
+  def stub(mock, name, code) do
+    hammox_code = wrap(mock, name, code)
+    Mox.stub(mock, name, hammox_code)
   end
 
   @doc """
@@ -62,11 +60,6 @@ defmodule Hammox do
   See [Mox.set_mox_private/1](https://hexdocs.pm/mox/Mox.html#set_mox_private/1).
   """
   defdelegate set_mox_private(context \\ %{}), to: Mox
-
-  @doc """
-  See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
-  """
-  defdelegate stub(mock, name, code), to: Mox
 
   @doc """
   See [Mox.stub_with/2](https://hexdocs.pm/mox/Mox.html#stub_with/2).
@@ -234,6 +227,18 @@ defmodule Hammox do
       end)
     end)
     |> Enum.into(%{})
+  end
+
+  defp wrap(mock, name, code) do
+    arity = :erlang.fun_info(code)[:arity]
+
+    case fetch_typespecs_for_mock(mock, name, arity) do
+      # This is really an error case where we're trying to mock a function
+      # that does not exist in the behaviour. Mox will flag it better though
+      # so just let it pass through.
+      [] -> code
+      typespecs -> protected(code, typespecs, arity)
+    end
   end
 
   defp protected(code, typespecs, 0) do

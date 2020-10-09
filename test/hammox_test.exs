@@ -1228,17 +1228,17 @@ defmodule HammoxTest do
   end
 
   defp assert_pass(function_name, value) do
-    TestMock |> expect(function_name, fn -> value end)
+    TestMock |> stub(function_name, fn -> value end)
     assert value == apply(TestMock, function_name, [])
   end
 
   defp assert_fail(function_name, value) do
-    TestMock |> expect(function_name, fn -> value end)
+    TestMock |> stub(function_name, fn -> value end)
     assert_raise(Hammox.TypeMatchError, fn -> apply(TestMock, function_name, []) end)
   end
 
   defp assert_fail(function_name, value, expected_message) do
-    TestMock |> expect(function_name, fn -> value end)
+    TestMock |> stub(function_name, fn -> value end)
 
     assert_raise(Hammox.TypeMatchError, expected_message, fn ->
       apply(TestMock, function_name, [])
