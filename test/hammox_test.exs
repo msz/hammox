@@ -1227,18 +1227,32 @@ defmodule HammoxTest do
     end
   end
 
+  describe "expect/4" do
+    test "protects mocks" do
+      TestMock |> expect(:foo_none, fn -> :baz end)
+      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_none() end)
+    end
+  end
+
+  describe "stub/3" do
+    test "protects stubs" do
+      TestMock |> stub(:foo_none, fn -> :baz end)
+      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_none() end)
+    end
+  end
+
   defp assert_pass(function_name, value) do
-    TestMock |> stub(function_name, fn -> value end)
+    TestMock |> expect(function_name, fn -> value end)
     assert value == apply(TestMock, function_name, [])
   end
 
   defp assert_fail(function_name, value) do
-    TestMock |> stub(function_name, fn -> value end)
+    TestMock |> expect(function_name, fn -> value end)
     assert_raise(Hammox.TypeMatchError, fn -> apply(TestMock, function_name, []) end)
   end
 
   defp assert_fail(function_name, value, expected_message) do
-    TestMock |> stub(function_name, fn -> value end)
+    TestMock |> expect(function_name, fn -> value end)
 
     assert_raise(Hammox.TypeMatchError, expected_message, fn ->
       apply(TestMock, function_name, [])
