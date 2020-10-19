@@ -158,17 +158,17 @@ defmodule RealDatabaseTest do
 end
 ```
 
-Hammox also provides a `setup_all` friendly `Hammox.protect/3` function which
-leverages this pattern. It produces a map of decorated functions from the
-module and is especially useful when you're decorating several functions at
-once:
+Hammox also provides a `setup_all` friendly version of `Hammox.protect` which
+leverages this pattern. Simply pass both the implementation module and the
+behaviour module and you will get a map of all callbacks defined by the
+behaviour as decorated implementation functions.
 
 ```elixir
 defmodule RealDatabaseTest do
   use ExUnit.Case, async: true
 
   setup_all do
-    Hammox.protect(RealDatabase, Database, get_users: 0)
+    Hammox.protect(RealDatabase, Database)
   end
 
   test "get_users/0 returns list of users", %{get_users_0: get_users_0} do
