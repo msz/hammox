@@ -85,25 +85,7 @@ defmodule Hammox do
 
   @doc since: "0.1.0"
   @doc """
-  Same as `protect/3`, but decorate all public functions inside the module.
-
-  Example:
-
-  ```elixir
-  defmodule Calculator do
-    @callback add(integer(), integer()) :: integer()
-    def add(a, b), do: a + b
-    @callback add(integer(), integer(), integer()) :: integer()
-    def add(a, b, c), do: a + b + c
-    @callback multiply(integer(), integer()) :: integer()
-    def multiply(a, b), do: a * b
-  end
-
-  %{
-    add_2: add_2,
-    add_3: add_3,
-    multiply_2: multiply_2
-  } = Hammox.protect(Calculator)
+  See `protect/3`.
   """
   @spec protect(module :: module()) :: %{atom() => fun()}
   def protect(module) when is_atom(module) do
@@ -113,36 +95,7 @@ defmodule Hammox do
 
   @doc since: "0.1.0"
   @doc """
-  Takes the function provided by a module, function, arity tuple and
-  decorates it with Hammox type checking.
-
-  Returns a new anonymous function.
-
-  Example:
-
-  ```elixir
-  defmodule Calculator do
-    @callback add(integer(), integer()) :: integer()
-  end
-
-  defmodule TestCalculator do
-    def add(a, b), do: a + b
-  end
-
-  add_2 = Hammox.protect({TestCalculator, :add, 2}, Calculator)
-
-  add_2.(1.5, 2.5) # throws Hammox.TypeMatchError
-  ```
-
-  A common tactic is to put behaviour callbacks and the "default"
-  implementations for these callbacks in the same module. For these kinds of
-  modules, you can also use `protect/2` as a shortcut for `protect/3`:
-  ```elixir
-  # calling this
-  Hammox.protect(SomeModule, foo: 1)
-  # works the same as this
-  Hammox.protect(SomeModule, SomeModule, foo: 1)
-  ```
+  See `protect/3`.
   """
   def protect(mfa, behaviour_name)
 
@@ -173,36 +126,96 @@ defmodule Hammox do
 
   @doc since: "0.1.0"
   @doc """
-  Same as `protect/2`, but allows decorating multiple functions at the same
-  time.
+  Decorates functions with Hammox checks based on given behaviour.
 
-  Provide a list of functions to decorate as third argument.
+  ## Basic usage
 
-  Returns a map where the keys are atoms of the form
-  `:{function_name}_{arity}` and values are the decorated anonymous
-  functions.
+  When passed an MFA tuple representing the function you'd like to protect,
+  and a behaviour containing a callback for the function, it returns a new
+  anonymous function that raises `Hammox.TypeMatchError` when called
+  incorrectly or when it returns an incorrect value.
 
   Example:
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+  end
 
+  defmodule TestCalculator do
+    def add(a, b), do: a + b
+  end
+
+  add_2 = Hammox.protect({TestCalculator, :add, 2}, Calculator)
+
+  add_2.(1.5, 2.5) # throws Hammox.TypeMatchError
+  ```
+
+  ## Batch usage
+
+  You can decorate all functions defined by a given behaviour by passing an
+  implementation module and a behaviour module. Optionally, you can pass an
+  explicit list of functions as the third argument.
+
+  The returned map is useful as the return value for a test setup callback to
+  set test context for all tests to use.
+
+  Example:
   ```elixir
   defmodule Calculator do
     @callback add(integer(), integer()) :: integer()
     @callback add(integer(), integer(), integer()) :: integer()
+    @callback add(integer(), integer(), integer(), integer()) :: integer()
     @callback multiply(integer(), integer()) :: integer()
   end
 
   defmodule TestCalculator do
     def add(a, b), do: a + b
     def add(a, b, c), do: a + b + c
+    def add(a, b, c, d), do: a + b + c + d
     def multiply(a, b), do: a * b
   end
 
   %{
     add_2: add_2,
     add_3: add_3,
+    add_4: add_4
+    multiply_2: multiply_2
+  } = Hammox.protect(TestCalculator, Calculator)
+
+  # optionally
+  %{
+    add_2: add_2,
+    add_3: add_3,
     multiply_2: multiply_2
   } = Hammox.protect(TestCalculator, Calculator, add: [2, 3], multiply: 2)
+  ```
 
+  ## Behaviour-implementation shortcuts
+
+  Often, there exists one "default" implementation for a behaviour. A common
+  practice is then to define both the callbacks and the implementations in
+  one module. For these behaviour-implementation modules, Hammox provides
+  shortucts that only require one module.
+
+  Example:
+
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+    def add(a, b), do: a + b
+  end
+
+  Hammox.protect({Calculator, :add, 2})
+  # is equivalent to
+  Hammox.protect({Calculator, :add, 2}, Calculator)
+
+  Hammox.protect(Calculator, add: 2)
+  # is equivalent to
+  Hammox.protect(Calculator, Calculator, add: 2)
+
+  Hammox.protect(Calculator)
+  # is equivalent to
+  Hammox.protect(Calculator, Calculator)
   ```
   """
   @spec protect(

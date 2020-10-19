@@ -1,5 +1,8 @@
 defmodule Hammox.TypeMatchError do
-  @moduledoc false
+  @moduledoc """
+  An error thrown when Hammox detects that values in a function call don't
+  match types defined in typespecs.
+  """
   defexception [:message]
 
   alias Hammox.Utils
