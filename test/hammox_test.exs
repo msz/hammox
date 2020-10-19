@@ -10,6 +10,11 @@ defmodule HammoxTest do
       assert %{other_foo_0: _, other_foo_1: _, foo_0: _} =
                Hammox.protect(Hammox.Test.BehaviourImplementation)
     end
+
+    test "decorates the function designated by the MFA tuple" do
+      fun = Hammox.protect({Hammox.Test.BehaviourImplementation, :foo, 0})
+      assert_raise(Hammox.TypeMatchError, fn -> fun.() end)
+    end
   end
 
   describe "protect/2" do

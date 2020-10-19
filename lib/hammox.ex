@@ -15,6 +15,8 @@ defmodule Hammox do
   alias Hammox.TypeMatchError
   alias Hammox.Cache
 
+  @type function_arity_pair :: {atom(), arity() | [arity()]}
+
   defmodule TypespecNotFoundError do
     @moduledoc false
     defexception [:message]
@@ -83,41 +85,65 @@ defmodule Hammox do
 
   @doc since: "0.1.0"
   @doc """
-  Same as `protect/3`, but decorate all public functions inside the module.
+  See `protect/3`.
+  """
+  def protect(module)
 
-  Example:
-
-  ```elixir
-  defmodule Calculator do
-    @callback add(integer(), integer()) :: integer()
-    def add(a, b), do: a + b
-    @callback add(integer(), integer(), integer()) :: integer()
-    def add(a, b, c), do: a + b + c
-    @callback multiply(integer(), integer()) :: integer()
-    def multiply(a, b), do: a * b
+  @spec protect(module :: module()) :: %{atom() => fun()}
+  def protect(module) when is_atom(module) do
+    funs = get_funcs!(module)
+    protect(module, module, funs)
   end
 
-  %{
-    add_2: add_2,
-    add_3: add_3,
-    multiply_2: multiply_2
-  } = Hammox.protect(Calculator)
-  """
-  @spec protect(module_name :: module()) :: map()
-  def protect(module_name) when is_atom(module_name) do
-    funs = get_funcs!(module_name)
-    protect(module_name, module_name, funs)
+  @spec protect(mfa :: mfa()) :: fun()
+  def protect({module, function_name, arity})
+      when is_atom(module) and is_atom(function_name) and is_integer(arity) do
+    protect({module, function_name, arity}, module)
   end
 
   @doc since: "0.1.0"
   @doc """
-  Takes the function provided by a module, function, arity tuple and
-  decorates it with Hammox type checking.
+  See `protect/3`.
+  """
+  def protect(mfa, behaviour_name)
 
-  Returns a new anonymous function.
+  @spec protect(module :: module(), funs :: [function_arity_pair()]) :: %{atom() => fun()}
+  def protect(module, funs) when is_atom(module) and is_list(funs),
+    do: protect(module, module, funs)
+
+  @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
+  def protect({module, function_name, arity} = mfa, behaviour_name)
+      when is_atom(module) and is_atom(function_name) and is_integer(arity) and
+             is_atom(behaviour_name) do
+    module_exist?(module)
+    module_exist?(behaviour_name)
+    mfa_exist?(mfa)
+
+    code = {module, function_name}
+
+    typespecs = fetch_typespecs!(behaviour_name, function_name, arity)
+    protected(code, typespecs, arity)
+  end
+
+  @spec protect(implementation_name :: module(), behaviour_name :: module()) :: %{atom() => fun()}
+  def protect(implementation_name, behaviour_name)
+      when is_atom(implementation_name) and is_atom(behaviour_name) do
+    funs = get_funcs!(behaviour_name)
+    protect(implementation_name, behaviour_name, funs)
+  end
+
+  @doc since: "0.1.0"
+  @doc """
+  Decorates functions with Hammox checks based on given behaviour.
+
+  ## Basic usage
+
+  When passed an MFA tuple representing the function you'd like to protect,
+  and a behaviour containing a callback for the function, it returns a new
+  anonymous function that raises `Hammox.TypeMatchError` when called
+  incorrectly or when it returns an incorrect value.
 
   Example:
-
   ```elixir
   defmodule Calculator do
     @callback add(integer(), integer()) :: integer()
@@ -132,85 +158,82 @@ defmodule Hammox do
   add_2.(1.5, 2.5) # throws Hammox.TypeMatchError
   ```
 
-  A common tactic is to put behaviour callbacks and the "default"
-  implementations for these callbacks in the same module. For these kinds of
-  modules, you can also use `protect/2` as a shortcut for `protect/3`:
-  ```elixir
-  # calling this
-  Hammox.protect(SomeModule, foo: 1)
-  # works the same as this
-  Hammox.protect(SomeModule, SomeModule, foo: 1)
-  ```
-  """
-  def protect(mfa, behaviour_name)
+  ## Batch usage
 
-  @spec protect(module_name :: module(), funs :: [{atom(), arity() | [arity()]}]) :: map()
-  def protect(module_name, funs) when is_atom(module_name) and is_list(funs),
-    do: protect(module_name, module_name, funs)
+  You can decorate all functions defined by a given behaviour by passing an
+  implementation module and a behaviour module. Optionally, you can pass an
+  explicit list of functions as the third argument.
 
-  @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
-  def protect({module_name, function_name, arity} = mfa, behaviour_name)
-      when is_atom(module_name) and is_atom(function_name) and is_integer(arity) and
-             is_atom(behaviour_name) do
-    module_exist?(module_name)
-    module_exist?(behaviour_name)
-    mfa_exist?(mfa)
-
-    code = {module_name, function_name}
-
-    typespecs = fetch_typespecs!(behaviour_name, function_name, arity)
-    protected(code, typespecs, arity)
-  end
-
-  @spec protect(implementation_name :: module(), behaviour_name :: module()) :: map()
-  def protect(implementation_name, behaviour_name)
-      when is_atom(implementation_name) and is_atom(behaviour_name) do
-    funs = get_funcs!(behaviour_name)
-    protect(implementation_name, behaviour_name, funs)
-  end
-
-  @doc since: "0.1.0"
-  @doc """
-  Same as `protect/2`, but allows decorating multiple functions at the same
-  time.
-
-  Provide a list of functions to decorate as third argument.
-
-  Returns a map where the keys are atoms of the form
-  `:{function_name}_{arity}` and values are the decorated anonymous
-  functions.
+  The returned map is useful as the return value for a test setup callback to
+  set test context for all tests to use.
 
   Example:
-
   ```elixir
   defmodule Calculator do
     @callback add(integer(), integer()) :: integer()
     @callback add(integer(), integer(), integer()) :: integer()
+    @callback add(integer(), integer(), integer(), integer()) :: integer()
     @callback multiply(integer(), integer()) :: integer()
   end
 
   defmodule TestCalculator do
     def add(a, b), do: a + b
     def add(a, b, c), do: a + b + c
+    def add(a, b, c, d), do: a + b + c + d
     def multiply(a, b), do: a * b
   end
 
   %{
     add_2: add_2,
     add_3: add_3,
+    add_4: add_4
+    multiply_2: multiply_2
+  } = Hammox.protect(TestCalculator, Calculator)
+
+  # optionally
+  %{
+    add_2: add_2,
+    add_3: add_3,
     multiply_2: multiply_2
   } = Hammox.protect(TestCalculator, Calculator, add: [2, 3], multiply: 2)
+  ```
 
+  ## Behaviour-implementation shortcuts
+
+  Often, there exists one "default" implementation for a behaviour. A common
+  practice is then to define both the callbacks and the implementations in
+  one module. For these behaviour-implementation modules, Hammox provides
+  shortucts that only require one module.
+
+  Example:
+
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+    def add(a, b), do: a + b
+  end
+
+  Hammox.protect({Calculator, :add, 2})
+  # is equivalent to
+  Hammox.protect({Calculator, :add, 2}, Calculator)
+
+  Hammox.protect(Calculator, add: 2)
+  # is equivalent to
+  Hammox.protect(Calculator, Calculator, add: 2)
+
+  Hammox.protect(Calculator)
+  # is equivalent to
+  Hammox.protect(Calculator, Calculator)
   ```
   """
   @spec protect(
-          module_name :: module(),
+          module :: module(),
           behaviour_name :: module(),
-          funs :: [{atom(), arity() | [arity()]}]
+          funs :: [function_arity_pair()]
         ) ::
-          map()
-  def protect(module_name, behaviour_name, funs)
-      when is_atom(module_name) and is_atom(behaviour_name) and is_list(funs) do
+          %{atom() => fun()}
+  def protect(module, behaviour_name, funs)
+      when is_atom(module) and is_atom(behaviour_name) and is_list(funs) do
     funs
     |> Enum.flat_map(fn {function_name, arity_or_arities} ->
       arity_or_arities
@@ -222,7 +245,7 @@ defmodule Hammox do
           |> Kernel.<>("_#{arity}")
           |> String.to_atom()
 
-        value = protect({module_name, function_name, arity}, behaviour_name)
+        value = protect({module, function_name, arity}, behaviour_name)
         {key, value}
       end)
     end)
@@ -308,7 +331,7 @@ defmodule Hammox do
   defp protected_code(code, typespecs, args) do
     return_value =
       case code do
-        {module_name, function_name} -> apply(module_name, function_name, args)
+        {module, function_name} -> apply(module, function_name, args)
         anonymous when is_function(anonymous) -> apply(anonymous, args)
       end
 
@@ -405,8 +428,8 @@ defmodule Hammox do
     end
   end
 
-  defp do_fetch_typespecs(behaviour_module_name, function_name, arity) do
-    callbacks = fetch_callbacks(behaviour_module_name)
+  defp do_fetch_typespecs(behaviour_module, function_name, arity) do
+    callbacks = fetch_callbacks(behaviour_module)
 
     callbacks
     |> Enum.find_value([], fn
@@ -414,15 +437,15 @@ defmodule Hammox do
       _ -> false
     end)
     |> Enum.map(fn typespec ->
-      Utils.replace_user_types(typespec, behaviour_module_name)
+      Utils.replace_user_types(typespec, behaviour_module)
     end)
   end
 
-  defp fetch_callbacks(behaviour_module_name) do
-    case Cache.get({:callbacks, behaviour_module_name}) do
+  defp fetch_callbacks(behaviour_module) do
+    case Cache.get({:callbacks, behaviour_module}) do
       nil ->
-        {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module_name)
-        Cache.put({:callbacks, behaviour_module_name}, callbacks)
+        {:ok, callbacks} = Code.Typespec.fetch_callbacks(behaviour_module)
+        Cache.put({:callbacks, behaviour_module}, callbacks)
         callbacks
 
       callbacks ->
@@ -444,37 +467,35 @@ defmodule Hammox do
     Enum.at(arg_typespecs, arg_index)
   end
 
-  defp module_exist?(module_name) do
-    case Code.ensure_compiled(module_name) do
+  defp module_exist?(module) do
+    case Code.ensure_compiled(module) do
       {:module, _} ->
         true
 
       _ ->
         raise(ArgumentError,
-          message: "Could not find module #{Utils.module_to_string(module_name)}."
+          message: "Could not find module #{Utils.module_to_string(module)}."
         )
     end
   end
 
-  defp mfa_exist?({module_name, function_name, arity}) do
-    case function_exported?(module_name, function_name, arity) do
+  defp mfa_exist?({module, function_name, arity}) do
+    case function_exported?(module, function_name, arity) do
       true ->
         true
 
       _ ->
         raise(ArgumentError,
           message:
-            "Could not find function #{Utils.module_to_string(module_name)}.#{function_name}/#{
-              arity
-            }."
+            "Could not find function #{Utils.module_to_string(module)}.#{function_name}/#{arity}."
         )
     end
   end
 
-  defp get_funcs!(module_name) do
-    module_exist?(module_name)
+  defp get_funcs!(module) do
+    module_exist?(module)
 
-    module_name
+    module
     |> fetch_callbacks()
     |> Enum.map(fn {callback, _typespecs} ->
       callback
