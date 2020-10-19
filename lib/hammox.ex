@@ -87,10 +87,18 @@ defmodule Hammox do
   @doc """
   See `protect/3`.
   """
+  def protect(module)
+
   @spec protect(module :: module()) :: %{atom() => fun()}
   def protect(module) when is_atom(module) do
     funs = get_funcs!(module)
     protect(module, module, funs)
+  end
+
+  @spec protect(mfa :: mfa()) :: fun()
+  def protect({module, function_name, arity})
+      when is_atom(module) and is_atom(function_name) and is_integer(arity) do
+    protect({module, function_name, arity}, module)
   end
 
   @doc since: "0.1.0"
