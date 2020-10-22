@@ -15,6 +15,4 @@ defmodule Hammox.Test.BehaviourImplementation do
   def other_foo(_) do
     1
   end
-
-  
 end
