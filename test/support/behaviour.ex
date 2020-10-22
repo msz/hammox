@@ -125,4 +125,6 @@ defmodule Hammox.Test.Behaviour do
 
   @opaque opaque_type :: :opaque_value
   @callback foo_opaque_type() :: opaque_type
+
+  @callback changeset_validation() :: :ok | {:error, Ecto.Changeset.t()}
 end

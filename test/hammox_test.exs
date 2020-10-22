@@ -179,6 +179,14 @@ defmodule HammoxTest do
     test "fail" do
       assert_fail(:foo_struct, %{foo: :bar})
     end
+
+    test "also works with Ecto.Changeset" do
+      changeset = Ecto.Changeset.change({%{}, %{a: :string, b: :integer}}, %{})
+      assert_pass(:changeset_validation, {:error, changeset})
+
+      changeset = Ecto.Changeset.change({%{}, %{a: :string, b: :integer}}, %{a: 1})
+      assert_pass(:changeset_validation, {:error, changeset})
+    end
   end
 
   describe "tuple()" do
@@ -546,8 +554,8 @@ defmodule HammoxTest do
   end
 
   describe "map with required atom key literal" do
-    test "empty fail" do
-      assert_fail(:foo_map_required_atom_key_literal, %{})
+    test "empty pass" do
+      assert_pass(:foo_map_required_atom_key_literal, %{})
     end
 
     test "pass" do
@@ -560,8 +568,8 @@ defmodule HammoxTest do
   end
 
   describe "map with required key literal" do
-    test "empty fail" do
-      assert_fail(:foo_map_required_key_literal, %{})
+    test "empty pass" do
+      assert_pass(:foo_map_required_key_literal, %{})
     end
 
     test "pass" do
@@ -592,8 +600,8 @@ defmodule HammoxTest do
   end
 
   describe "map with required and optional keys literal" do
-    test "empty fail" do
-      assert_fail(:foo_map_required_and_optional_key_literal, %{})
+    test "empty pass" do
+      assert_pass(:foo_map_required_and_optional_key_literal, %{})
     end
 
     test "pass without optional" do
@@ -614,8 +622,8 @@ defmodule HammoxTest do
   end
 
   describe "map with overlapping required key types" do
-    test "empty fail" do
-      assert_fail(:foo_map_overlapping_required_types_literal, %{})
+    test "empty pass" do
+      assert_pass(:foo_map_overlapping_required_types_literal, %{})
     end
 
     test "one key fulfilling both pass" do

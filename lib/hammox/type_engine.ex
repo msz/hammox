@@ -43,6 +43,10 @@ defmodule Hammox.TypeEngine do
     type_mismatch(value, type)
   end
 
+  def match_type(map, {:type, _, :map, _}) when map == %{} do
+    :ok
+  end
+
   def match_type(value, {:type, _, :map, :any}) when is_map(value) do
     :ok
   end
