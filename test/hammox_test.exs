@@ -623,6 +623,44 @@ defmodule HammoxTest do
     end
   end
 
+  describe "map with __struct__ key" do
+    test "empty fail" do
+      assert_fail(:foo_map_struct_key, %{})
+    end
+
+    test "pass" do
+      assert_pass(:foo_map_struct_key, %{
+        __struct__: :foo,
+        key: 42
+      })
+    end
+
+    test "fail with missing __struct__" do
+      assert_fail(:foo_map_struct_key, %{key: 42})
+    end
+
+    test "fail with incorrect __struct__" do
+      assert_fail(:foo_map_struct_key, %{
+        __struct__: "wrong type",
+        key: 42
+      })
+    end
+
+    test "fail with incorrect fields" do
+      assert_fail(:foo_map_struct_key, %{
+        __struct__: :foo,
+        key: "not a number"
+      })
+    end
+
+    test "fail with incorrect __struct__ and fields" do
+      assert_fail(:foo_map_struct_key, %{
+        __struct__: "wrong type",
+        key: "not a number"
+      })
+    end
+  end
+
   describe "struct literal" do
     test "fail map" do
       assert_fail(:foo_struct_literal, %{foo: :bar})

@@ -47,6 +47,10 @@ defmodule Hammox.Test.Behaviour do
               required(atom()) => atom(),
               required(atom() | number()) => atom()
             }
+  @callback foo_map_struct_key() :: %{
+              :__struct__ => atom(),
+              key: number()
+            }
   @callback foo_struct_literal() :: %Hammox.Test.Struct{}
   @callback foo_struct_fields_literal() :: %Hammox.Test.Struct{foo: number()}
   @callback foo_empty_tuple_literal() :: {}
