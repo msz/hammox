@@ -352,6 +352,13 @@ defmodule Hammox.TypeEngine do
 
       [{:type, _, :map_field_exact, [{:atom, _, :__struct__}, {:atom, _, other_struct_name}]}] ->
         {:error, [{:struct_name_type_mismatch, struct_name, other_struct_name}]}
+
+      [{:type, _, :map_field_exact, [{:atom, _, :__struct__}, {:type, _, _, _} = struct_type]}] ->
+        with :ok <- match_type(struct_name, struct_type),
+             :ok <-
+               match_type(Map.delete(value, :__struct__), {:type, 0, :map, rest_field_types}) do
+          :ok
+        end
     end
   end
 
