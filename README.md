@@ -131,11 +131,11 @@ It will return an anonymous function which you can use in place of the
 original module function. An example test:
 
 ```elixir
-defmodule RealDatabaseTest do
+defmodule StatsTest do
   use ExUnit.Case, async: true
 
   test "get_users/0 returns list of users" do
-    get_users_0 = Hammox.protect({RealDatabase, :get_users, 0}, Database)
+    get_users_0 = Hammox.protect({DatabaseMock, :get_users, 0}, Database)
     assert {:ok, ["jim", "joe"]} == get_users_0.()
   end
 end
@@ -145,11 +145,11 @@ It's a good idea to put setup logic like this in a `setup_all` hook and then
 access the protected functions using the test context:
 
 ```elixir
-defmodule RealDatabaseTest do
+defmodule StatsTest do
   use ExUnit.Case, async: true
 
   setup_all do
-    %{get_users_0: Hammox.protect({RealDatabase, :get_users, 0}, Database)}
+    %{get_users_0: Hammox.protect({DatabaseMock, :get_users, 0}, Database)}
   end
 
   test "get_users/0 returns list of users", %{get_users_0: get_users_0} do
@@ -164,11 +164,11 @@ behaviour module and you will get a map of all callbacks defined by the
 behaviour as decorated implementation functions.
 
 ```elixir
-defmodule RealDatabaseTest do
+defmodule StatsTest do
   use ExUnit.Case, async: true
 
   setup_all do
-    Hammox.protect(RealDatabase, Database)
+    Hammox.protect(DatabaseMock, Database)
   end
 
   test "get_users/0 returns list of users", %{get_users_0: get_users_0} do
