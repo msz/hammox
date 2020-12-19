@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: elixir:1.9.1-slim
+      image: elixir:1.7-slim
 
     steps:
     - uses: actions/checkout@v1
