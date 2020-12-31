@@ -1,0 +1,3 @@
+defmodule Hammox.Test.Protect.Implementation do
+  def behaviour_wrong_typespec, do: :wrong
+end
