@@ -188,7 +188,7 @@ implementations are subjected to the exact same checks.
 Dialyzer is a static analysis tool; Hammox is a dynamic contract test
 provider. They operate differently and one can catch some bugs when the other
 doesn't. While it is true that Hammox would be redudant given a strong,
-strict, TypeScript-like type system for Elixir, Dialyzer is far for providing
+strict, TypeScript-like type system for Elixir, Dialyzer is far from providing
 that sort of coverage.
 
 ## Protocol types
