@@ -362,6 +362,10 @@ defmodule Hammox.TypeEngine do
     end
   end
 
+  # If you can sensibly refactor the map matching code below so that the Credo
+  # checks pass, I will personally buy you a beer — @msz
+  # credo:disable-for-lines:140 Credo.Check.Refactor.Nesting
+  # credo:disable-for-lines:139 Credo.Check.Refactor.CyclomaticComplexity
   def match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
     hit_map =
       map_entry_types
