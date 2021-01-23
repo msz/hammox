@@ -24,7 +24,7 @@ delete it from your list of dependencies in `mix.exs`. Then add `:hammox`:
 ```elixir
 def deps do
   [
-    {:hammox, "~> 0.3"}
+    {:hammox, "~> 0.4"}
   ]
 end
 ```
@@ -177,7 +177,22 @@ defmodule RealDatabaseTest do
 end
 ```
 
-#### Why use Hammox for my application code when I have Dialyzer?
+Alternatively, if you're up for trading explicitness for some macro magic,
+you can use `use Hammox.Protect` to locally define protected versions of
+functions you're testing, as if you `import`ed the module:
+
+```elixir
+defmodule RealDatabaseTest do
+  use ExUnit.Case, async: true
+  use Hammox.Protect, module: RealDatabase, behaviour: Database
+
+  test "get_users/0 returns list of users" do
+    assert {:ok, ["jim", "joe"]} == get_users()
+  end
+end
+```
+
+## Why use Hammox for my application code when I have Dialyzer?
 
 Dialyzer cannot detect Mox style mocks not conforming to typespec.
 
