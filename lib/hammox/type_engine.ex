@@ -1,8 +1,8 @@
 defmodule Hammox.TypeEngine do
   @moduledoc false
 
-  alias Hammox.Utils
   alias Hammox.Cache
+  alias Hammox.Utils
 
   @type_kinds [:type, :typep, :opaque]
 

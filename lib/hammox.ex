@@ -10,10 +10,10 @@ defmodule Hammox do
   v0.1.0, the only Hammox-specific functions are `protect/2` and `protect/3`.
   """
 
-  alias Hammox.Utils
+  alias Hammox.Cache
   alias Hammox.TypeEngine
   alias Hammox.TypeMatchError
-  alias Hammox.Cache
+  alias Hammox.Utils
 
   @type function_arity_pair :: {atom(), arity() | [arity()]}
 
