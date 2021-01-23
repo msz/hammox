@@ -115,8 +115,8 @@ defmodule Hammox do
   def protect({module, function_name, arity} = mfa, behaviour_name)
       when is_atom(module) and is_atom(function_name) and is_integer(arity) and
              is_atom(behaviour_name) do
-    module_exist?(module)
-    module_exist?(behaviour_name)
+    Utils.check_module_exists(module)
+    Utils.check_module_exists(behaviour_name)
     mfa_exist?(mfa)
 
     code = {module, function_name}
@@ -467,18 +467,6 @@ defmodule Hammox do
     Enum.at(arg_typespecs, arg_index)
   end
 
-  defp module_exist?(module) do
-    case Code.ensure_compiled(module) do
-      {:module, _} ->
-        true
-
-      _ ->
-        raise(ArgumentError,
-          message: "Could not find module #{Utils.module_to_string(module)}."
-        )
-    end
-  end
-
   defp mfa_exist?({module, function_name, arity}) do
     case function_exported?(module, function_name, arity) do
       true ->
@@ -493,7 +481,7 @@ defmodule Hammox do
   end
 
   defp get_funcs!(module) do
-    module_exist?(module)
+    Utils.check_module_exists(module)
 
     module
     |> fetch_callbacks()
