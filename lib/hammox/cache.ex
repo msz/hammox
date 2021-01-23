@@ -1,4 +1,5 @@
 defmodule Hammox.Cache do
+  @moduledoc false
   use Agent
 
   def start_link(_initial_value) do
