@@ -4,6 +4,8 @@ defmodule Hammox.TypeEngine do
   alias Hammox.Cache
   alias Hammox.Utils
 
+  use Ea
+
   @type_kinds [:type, :typep, :opaque]
 
   def match_type(value, {:type, _, :union, union_types} = union) when is_list(union_types) do
@@ -679,6 +681,7 @@ defmodule Hammox.TypeEngine do
     end
   end
 
+  @cached true
   defp do_resolve_remote_type(
          {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]}
        )
