@@ -89,7 +89,15 @@ defmodule Hammox.Protect do
         """
     end
 
-    funs = Keyword.get_lazy(opts, :funs, fn -> get_funs!(behaviour || module) end)
+    module_with_callbacks = behaviour || module
+
+    funs = Keyword.get_lazy(opts, :funs, fn -> get_funs!(module_with_callbacks) end)
+
+    if funs == [] do
+      raise ArgumentError,
+        message:
+          "The module #{inspect(module_with_callbacks)} does not contain any callbacks. Please use a behaviour with at least one callback."
+    end
 
     {module, behaviour, funs}
   end
