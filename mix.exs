@@ -1,6 +1,7 @@
 defmodule Hammox.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/msz/hammox"
   @version "0.5.0"
 
   def project do
@@ -15,13 +16,7 @@ defmodule Hammox.MixProject do
 
       # Docs
       name: "Hammox",
-      description: "Automated contract testing for functions and mocks",
-      source_url: "https://github.com/msz/hammox",
-      source_ref: "v#{@version}",
-      docs: [
-        main: "readme",
-        extras: ["README.md"]
-      ],
+      docs: docs(),
       package: package()
     ]
   end
@@ -50,15 +45,29 @@ defmodule Hammox.MixProject do
 
   defp package do
     [
-      licenses: ["Apache 2.0"],
+      description: "Automated contract testing for functions and mocks.",
+      licenses: ["Apache-2.0"],
       maintainers: [
         "Michał Szewczak"
       ],
       files: ["lib", "mix.exs", "LICENSE", "README.md"],
       links: %{
-        "GitHub" => "https://github.com/msz/hammox",
+        "GitHub" => @source_url,
         "Mox" => "https://hex.pm/packages/mox"
       }
+    ]
+  end
+
+  defp docs do
+    [
+      extras: [
+        LICENSE: [title: "License"],
+        "README.md": [title: "Overview"]
+      ],
+      main: "readme",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
+      formatters: ["html"]
     ]
   end
 
