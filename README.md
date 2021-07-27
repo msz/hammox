@@ -110,8 +110,8 @@ the mock is now invalid — it no longer implements the given behaviour, and
 therefore breaks the contract. Even though Mox is supposed to create mocks
 following explicit contracts, it does not take typespecs into account.
 
-This is where Hammox comes in. Simply swap Mox with Hammox and you will now
-get this when trying to run the test:
+This is where Hammox comes in. Simply swap `import Mox` with `import Hammox`
+and you will now get this when trying to run the test:
 
 ```none
 ** (Hammox.TypeMatchError)
