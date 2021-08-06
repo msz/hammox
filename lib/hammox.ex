@@ -405,9 +405,7 @@ defmodule Hammox do
       [] ->
         raise TypespecNotFoundError,
           message:
-            "Could not find typespec for #{Utils.module_to_string(behaviour_name)}.#{
-              function_name
-            }/#{arity}."
+            "Could not find typespec for #{Utils.module_to_string(behaviour_name)}.#{function_name}/#{arity}."
 
       typespecs ->
         typespecs
