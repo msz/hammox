@@ -108,8 +108,16 @@ defmodule Hammox do
   def protect(mfa, behaviour_name)
 
   @spec protect(module :: module(), funs :: [function_arity_pair()]) :: %{atom() => fun()}
-  def protect(module, funs) when is_atom(module) and is_list(funs),
-    do: protect(module, module, funs)
+  def protect(module, [{function, arity} | _] = funs)
+      when is_atom(module) and is_atom(function) and (is_integer(arity) or is_list(arity)),
+      do: protect(module, module, funs)
+
+  def protect(module, [behaviour | _] = behaviour_names)
+      when is_atom(module) and is_atom(behaviour) do
+    Enum.reduce(behaviour_names, %{}, fn behaviour_name, acc ->
+      Map.merge(acc, protect(module, behaviour_name))
+    end)
+  end
 
   @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
   def protect({module, function_name, arity} = mfa, behaviour_name)
@@ -196,6 +204,38 @@ defmodule Hammox do
     add_3: add_3,
     multiply_2: multiply_2
   } = Hammox.protect(TestCalculator, Calculator, add: [2, 3], multiply: 2)
+  ```
+
+  ## Batch usage for multiple behviours
+
+  You can decorate all functions defined by any number of behaviours by passing an
+  implementation module and a list of behaviour modules.
+
+  The returned map is useful as the return value for a test setup callback to
+  set test context for all tests to use.
+
+  Example:
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+    @callback multiply(integer(), integer()) :: integer()
+  end
+
+  defmodule AdditionalCalculator do
+    @callback subtract(integer(), integer()) :: integer()
+  end
+
+  defmodule TestCalculator do
+    def add(a, b), do: a + b
+    def multiply(a, b), do: a * b
+    def subtract(a, b), do: a - b
+  end
+
+  %{
+    add_2: add_2,
+    multiply_2: multiply_2
+    subtract_2: subtract_2
+  } = Hammox.protect(TestCalculator, [Calculator, AdditionalCalculator])
   ```
 
   ## Behaviour-implementation shortcuts

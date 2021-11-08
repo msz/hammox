@@ -71,6 +71,14 @@ defmodule HammoxTest do
       assert %{foo_0: _, other_foo_0: _, other_foo_1: _} =
                Hammox.protect(Hammox.Test.SmallImplementation, Hammox.Test.SmallBehaviour)
     end
+
+    test "decorate all functions from multiple behaviours" do
+      assert %{foo_0: _, other_foo_0: _, other_foo_1: _, additional_foo_0: _} =
+               Hammox.protect(Hammox.Test.MultiBehaviourImplementation, [
+                 Hammox.Test.SmallBehaviour,
+                 Hammox.Test.AdditionalBehaviour
+               ])
+    end
   end
 
   describe "protect/3" do
