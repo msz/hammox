@@ -43,7 +43,7 @@ defmodule Hammox do
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
   def expect(mock, name, n \\ 1, code) do
-    :telemetry.span([:hammox, :allow], %{mock: mock, name: name, expect_count: n},
+    :telemetry.span([:hammox, :expect], %{mock: mock, name: name, expect_count: n},
       fn ->
         hammox_code = wrap(mock, name, code)
         result = Mox.expect(mock, name, n, hammox_code)
