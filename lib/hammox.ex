@@ -25,7 +25,14 @@ defmodule Hammox do
   @doc """
   See [Mox.allow/3](https://hexdocs.pm/mox/Mox.html#allow/3).
   """
-  defdelegate allow(mock, owner_pid, allowed_via), to: Mox
+  def allow(mock, owner_pid, allowed_via) do
+    :telemetry.span([:hammox, :allow], %{mock: mock, owner_pid: owner_pid, allowed_via: allowed_via},
+      fn ->
+        result = Mox.allow(mock, owner_pid, allowed_via)
+        {result, %{}}
+      end
+    )
+  end
 
   @doc """
   See [Mox.defmock/2](https://hexdocs.pm/mox/Mox.html#defmock/2).
@@ -36,8 +43,13 @@ defmodule Hammox do
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
   def expect(mock, name, n \\ 1, code) do
-    hammox_code = wrap(mock, name, code)
-    Mox.expect(mock, name, n, hammox_code)
+    :telemetry.span([:hammox, :allow], %{mock: mock, name: name, expect_count: n},
+      fn ->
+        hammox_code = wrap(mock, name, code)
+        result = Mox.expect(mock, name, n, hammox_code)
+        {result, %{}}
+      end
+    )
   end
 
   @doc """
