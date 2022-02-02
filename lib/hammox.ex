@@ -26,7 +26,9 @@ defmodule Hammox do
   See [Mox.allow/3](https://hexdocs.pm/mox/Mox.html#allow/3).
   """
   def allow(mock, owner_pid, allowed_via) do
-    :telemetry.span([:hammox, :allow], %{mock: mock, owner_pid: owner_pid, allowed_via: allowed_via},
+    :telemetry.span(
+      [:hammox, :allow],
+      %{mock: mock, owner_pid: owner_pid, allowed_via: allowed_via},
       fn ->
         result = Mox.allow(mock, owner_pid, allowed_via)
         {result, %{}}
@@ -43,13 +45,11 @@ defmodule Hammox do
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
   def expect(mock, name, n \\ 1, code) do
-    :telemetry.span([:hammox, :expect], %{mock: mock, name: name, expect_count: n},
-      fn ->
-        hammox_code = wrap(mock, name, code)
-        result = Mox.expect(mock, name, n, hammox_code)
-        {result, %{}}
-      end
-    )
+    :telemetry.span([:hammox, :expect], %{mock: mock, name: name, expect_count: n}, fn ->
+      hammox_code = wrap(mock, name, code)
+      result = Mox.expect(mock, name, n, hammox_code)
+      {result, %{}}
+    end)
   end
 
   @doc """
@@ -342,10 +342,15 @@ defmodule Hammox do
 
   defp protected_code(code, typespecs, args) do
     return_value =
-      case code do
-        {module, function_name} -> apply(module, function_name, args)
-        anonymous when is_function(anonymous) -> apply(anonymous, args)
-      end
+      :telemetry.span([:hammox, :run_expect], %{}, fn ->
+        return_value =
+          case code do
+            {module, function_name} -> apply(module, function_name, args)
+            anonymous when is_function(anonymous) -> apply(anonymous, args)
+          end
+
+        {return_value, %{}}
+      end)
 
     check_call(args, return_value, typespecs)
 
@@ -353,17 +358,31 @@ defmodule Hammox do
   end
 
   defp check_call(args, return_value, typespecs) when is_list(typespecs) do
-    typespecs
-    |> Enum.reduce_while({:error, []}, fn typespec, {:error, reasons} = result ->
-      case match_call(args, return_value, typespec) do
-        :ok ->
-          {:halt, :ok}
+    match_call_result =
+      :telemetry.span([:hammox, :check_call], %{}, fn ->
+        {result, check_call_count} =
+          typespecs
+          |> Enum.reduce_while({{:error, []}, 0}, fn typespec,
+                                                     {{:error, reasons} = result, counter} ->
+            counter = counter + 1
 
-        {:error, new_reasons} = new_result ->
-          {:cont, if(length(reasons) >= length(new_reasons), do: result, else: new_result)}
-      end
-    end)
-    |> case do
+            case match_call(args, return_value, typespec) do
+              :ok ->
+                {:halt, {:ok, counter}}
+
+              {:error, new_reasons} = new_result ->
+                {:cont,
+                 if(length(reasons) >= length(new_reasons),
+                   do: {result, counter},
+                   else: {new_result, counter}
+                 )}
+            end
+          end)
+
+        {result, %{spec_check_count: check_call_count}}
+      end)
+
+    case match_call_result do
       {:error, _} = error -> raise TypeMatchError, error
       :ok -> :ok
     end
@@ -381,35 +400,44 @@ defmodule Hammox do
   end
 
   defp match_args(args, typespec) do
-    args
-    |> Enum.zip(0..(length(args) - 1))
-    |> Enum.map(fn {arg, index} ->
-      arg_type = arg_typespec(typespec, index)
+    :telemetry.span([:hammox, :match_args], %{}, fn ->
+      result =
+        args
+        |> Enum.zip(0..(length(args) - 1))
+        |> Enum.map(fn {arg, index} ->
+          arg_type = arg_typespec(typespec, index)
 
-      case TypeEngine.match_type(arg, arg_type) do
-        {:error, reasons} ->
-          {:error, [{:arg_type_mismatch, index, arg, arg_type} | reasons]}
+          case TypeEngine.match_type(arg, arg_type) do
+            {:error, reasons} ->
+              {:error, [{:arg_type_mismatch, index, arg, arg_type} | reasons]}
 
-        :ok ->
-          :ok
-      end
-    end)
-    |> Enum.max_by(fn
-      {:error, reasons} -> length(reasons)
-      :ok -> 0
+            :ok ->
+              :ok
+          end
+        end)
+        |> Enum.max_by(fn
+          {:error, reasons} -> length(reasons)
+          :ok -> 0
+        end)
+
+      {result, %{}}
     end)
   end
 
   defp match_return_value(return_value, typespec) do
-    {:type, _, :fun, [_, return_type]} = typespec
+    :telemetry.span([:hammox, :match_return_value], %{}, fn ->
+      {:type, _, :fun, [_, return_type]} = typespec
 
-    case TypeEngine.match_type(return_value, return_type) do
-      {:error, reasons} ->
-        {:error, [{:return_type_mismatch, return_value, return_type} | reasons]}
+      result =
+        case TypeEngine.match_type(return_value, return_type) do
+          {:error, reasons} ->
+            {:error, [{:return_type_mismatch, return_value, return_type} | reasons]}
 
-      :ok ->
-        :ok
-    end
+          :ok ->
+            :ok
+        end
+      {result, %{}}
+    end)
   end
 
   defp fetch_typespecs!(behaviour_name, function_name, arity) do
@@ -417,9 +445,7 @@ defmodule Hammox do
       [] ->
         raise TypespecNotFoundError,
           message:
-            "Could not find typespec for #{Utils.module_to_string(behaviour_name)}.#{
-              function_name
-            }/#{arity}."
+            "Could not find typespec for #{Utils.module_to_string(behaviour_name)}.#{function_name}/#{arity}."
 
       typespecs ->
         typespecs
