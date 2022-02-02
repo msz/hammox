@@ -453,17 +453,25 @@ defmodule Hammox do
   end
 
   defp fetch_typespecs(behaviour_name, function_name, arity) do
-    cache_key = {:typespecs, {behaviour_name, function_name, arity}}
+    :telemetry.span(
+      [:hammox, :fetch_typespecs],
+      %{behaviour_name: behaviour_name, function_name: function_name, arity: arity},
+      fn ->
+        cache_key = {:typespecs, {behaviour_name, function_name, arity}}
 
-    case Cache.get(cache_key) do
-      nil ->
-        typespecs = do_fetch_typespecs(behaviour_name, function_name, arity)
-        Cache.put(cache_key, typespecs)
-        typespecs
+        result =
+          case Cache.get(cache_key) do
+            nil ->
+              typespecs = do_fetch_typespecs(behaviour_name, function_name, arity)
+              Cache.put(cache_key, typespecs)
+              typespecs
 
-      typespecs ->
-        typespecs
-    end
+            typespecs ->
+              typespecs
+          end
+          {result, %{}}
+      end
+    )
   end
 
   defp do_fetch_typespecs(behaviour_module, function_name, arity) do
