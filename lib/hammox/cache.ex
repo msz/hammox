@@ -23,15 +23,17 @@ defmodule Hammox.Cache do
   end
 
   def get(key) do
-    :telemetry.span(
-      [:hammox, :cache_get],
-      %{key: key},
-      fn ->
-        result = :ets.lookup(:typespec_cache, key)
-                 |> process_lookup()
-        {result, %{}}
-      end
-    )
+    #:telemetry.span(
+      #[:hammox, :cache_get],
+      #%{key: key},
+      #fn ->
+        #result = :ets.lookup(:typespec_cache, key)
+                 #|> process_lookup()
+        #{result, %{}}
+      #end
+    #)
+    :ets.lookup(:typespec_cache, key)
+    |> process_lookup()
   end
 
   defp process_lookup([{_key, value}] = _lookup_result) do
