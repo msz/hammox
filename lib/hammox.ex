@@ -56,8 +56,11 @@ defmodule Hammox do
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
   def stub(mock, name, code) do
-    hammox_code = wrap(mock, name, code)
-    Mox.stub(mock, name, hammox_code)
+    :telemetry.span([:hammox, :stub], %{mock: mock, name: name}, fn ->
+      hammox_code = wrap(mock, name, code)
+      result = Mox.stub(mock, name, hammox_code)
+      {result, %{}}
+    end)
   end
 
   @doc """
@@ -93,7 +96,12 @@ defmodule Hammox do
   @doc """
   See [Mox.verify_on_exit!/1](https://hexdocs.pm/mox/Mox.html#verify_on_exit!/1).
   """
-  defdelegate verify_on_exit!(context \\ %{}), to: Mox
+  def verify_on_exit!(context \\ %{}) do
+    :telemetry.span([:hammox, :verify_on_exit!], %{context: context}, fn ->
+      result = Mox.verify_on_exit!(context)
+      {result, %{}}
+    end)
+  end
 
   @doc since: "0.1.0"
   @doc """
