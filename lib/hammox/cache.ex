@@ -1,16 +1,42 @@
 defmodule Hammox.Cache do
   @moduledoc false
-  use Agent
+  use GenServer
 
   def start_link(_initial_value) do
-    Agent.start_link(fn -> %{} end, name: __MODULE__)
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
+  def init(_blah) do
+    {:ok, %{}}
   end
 
   def put(key, value) do
-    Agent.update(__MODULE__, &Map.put(&1, key, value))
+    :telemetry.span(
+      [:hammox, :cache_put],
+      %{key: key, value: value},
+      fn ->
+        result = GenServer.call(__MODULE__, {:put, key, value})
+        {result, %{}}
+      end
+    )
   end
 
   def get(key) do
-    Agent.get(__MODULE__, &Map.get(&1, key))
+    :telemetry.span(
+      [:hammox, :cache_get],
+      %{key: key},
+      fn ->
+        result = GenServer.call(__MODULE__, {:get, key})
+        {result, %{}}
+      end
+    )
+  end
+
+  def handle_call({:get, key}, _from, storage) do
+    {:reply, Map.get(storage, key), storage}
+  end
+
+  def handle_call({:put, key, value}, _from, storage) do
+    {:reply, :ok, Map.put(storage, key, value)}
   end
 end
