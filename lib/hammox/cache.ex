@@ -7,7 +7,7 @@ defmodule Hammox.Cache do
   end
 
   def init(_blah) do
-    :ets.new(:typespec_cache, [:named_table])
+    :ets.new(:typespec_cache, [:named_table, read_concurrency: true])
     {:ok, %{}}
   end
 
