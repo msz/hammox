@@ -7,7 +7,7 @@ defmodule Hammox.Cache do
   end
 
   def init(_blah) do
-    :ets.new(:typespec_cache, [:named_table])
+    :ets.new(:typespec_cache, [:named_table, :public])
     {:ok, %{}}
   end
 
@@ -20,7 +20,9 @@ defmodule Hammox.Cache do
         #{result, %{}}
       #end
     #)
-    GenServer.call(__MODULE__, {:put, key, value})
+    #GenServer.call(__MODULE__, {:put, key, value})
+    :ets.insert(:typespec_cache, {key, value})
+    :ok
   end
 
   def get(key) do
@@ -46,8 +48,8 @@ defmodule Hammox.Cache do
     #{:reply, Map.get(storage, key), storage}
   #end
 
-  def handle_call({:put, key, value}, _from, _storage) do
-    :ets.insert(:typespec_cache, {key, value})
-    {:reply, :ok, %{}}
-  end
+  #def handle_call({:put, key, value}, _from, _storage) do
+    #:ets.insert(:typespec_cache, {key, value})
+    #{:reply, :ok, %{}}
+  #end
 end
