@@ -20,7 +20,7 @@ defmodule Hammox.MixProject do
       source_ref: "v#{@version}",
       docs: [
         main: "readme",
-        extras: ["README.md"]
+        extras: ["README.md", "guides/Telemetry.md"]
       ],
       package: package()
     ]
