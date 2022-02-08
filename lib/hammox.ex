@@ -44,21 +44,25 @@ defmodule Hammox do
   @doc """
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
-  def expect(mock, name, n \\ 1, code) do
-    :telemetry.span([:hammox, :expect], %{mock: mock, name: name, expect_count: n}, fn ->
-      hammox_code = wrap(mock, name, code)
-      result = Mox.expect(mock, name, n, hammox_code)
-      {result, %{}}
-    end)
+  def expect(mock, function_name, n \\ 1, code) do
+    :telemetry.span(
+      [:hammox, :expect],
+      %{mock: mock, function_name: function_name, expect_count: n},
+      fn ->
+        hammox_code = wrap(mock, function_name, code)
+        result = Mox.expect(mock, function_name, n, hammox_code)
+        {result, %{}}
+      end
+    )
   end
 
   @doc """
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
-  def stub(mock, name, code) do
-    :telemetry.span([:hammox, :stub], %{mock: mock, name: name}, fn ->
-      hammox_code = wrap(mock, name, code)
-      result = Mox.stub(mock, name, hammox_code)
+  def stub(mock, function_name, code) do
+    :telemetry.span([:hammox, :stub], %{mock: mock, function_name: function_name}, fn ->
+      hammox_code = wrap(mock, function_name, code)
+      result = Mox.stub(mock, function_name, hammox_code)
       {result, %{}}
     end)
   end
@@ -387,7 +391,7 @@ defmodule Hammox do
             end
           end)
 
-        {result, %{spec_check_count: check_call_count}}
+        {result, %{total_specs_checked: check_call_count}}
       end)
 
     case match_call_result do
@@ -444,6 +448,7 @@ defmodule Hammox do
           :ok ->
             :ok
         end
+
       {result, %{}}
     end)
   end
@@ -477,7 +482,8 @@ defmodule Hammox do
             typespecs ->
               typespecs
           end
-          {result, %{}}
+
+        {result, %{}}
       end
     )
   end
