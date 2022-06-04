@@ -511,6 +511,10 @@ defmodule Hammox.TypeEngine do
     match_type(value, {:type, 0, :binary, [{:integer, 0, 0}, {:integer, 0, 1}]})
   end
 
+  def match_type(value, {:type, _, :bool, []}) do
+    match_type(value, {:type, 0, :boolean, []})
+  end
+
   def match_type(value, {:type, _, :boolean, []}) do
     match_type(value, {:type, 0, :union, [{:atom, 0, true}, {:atom, 0, false}]})
   end

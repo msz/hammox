@@ -783,6 +783,20 @@ defmodule HammoxTest do
     end
   end
 
+  describe "bool()" do
+    test "pass true" do
+      assert_pass(:foo_bool, true)
+    end
+
+    test "pass false" do
+      assert_pass(:foo_bool, false)
+    end
+
+    test "fail nil" do
+      assert_fail(:foo_bool, nil)
+    end
+  end
+
   describe "boolean()" do
     test "pass true" do
       assert_pass(:foo_boolean, true)
