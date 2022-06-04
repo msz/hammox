@@ -153,6 +153,9 @@ defmodule Hammox.TypeMatchError do
     {:foo, type, []}
     |> Code.Typespec.type_to_quoted()
     |> Macro.to_string()
+    |> String.split("\n")
+    |> Enum.map(&String.replace(&1, ~r/ +/, " "))
+    |> Enum.join()
     |> String.split(" :: ")
     |> case do
       [_, type_string] -> type_string
