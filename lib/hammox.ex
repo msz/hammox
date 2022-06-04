@@ -358,6 +358,8 @@ defmodule Hammox do
   end
 
   defp match_call(args, return_value, typespec) do
+    # Even though the last clause is redundant, it reads better this way.
+    # credo:disable-for-next-line Credo.Check.Refactor.RedundantWithClauseResult
     with :ok <- match_args(args, typespec),
          :ok <- match_return_value(return_value, typespec) do
       :ok
@@ -405,9 +407,7 @@ defmodule Hammox do
       [] ->
         raise TypespecNotFoundError,
           message:
-            "Could not find typespec for #{Utils.module_to_string(behaviour_name)}.#{
-              function_name
-            }/#{arity}."
+            "Could not find typespec for #{Utils.module_to_string(behaviour_name)}.#{function_name}/#{arity}."
 
       typespecs ->
         typespecs

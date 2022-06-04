@@ -15,9 +15,7 @@ defmodule Hammox.TypeMatchError do
   end
 
   defp human_reason({:arg_type_mismatch, index, value, type}) do
-    "#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{
-      Ordinal.ordinalize(index + 1)
-    } parameter's type #{type_to_string(type)}."
+    "#{Ordinal.ordinalize(index + 1)} argument value #{inspect(value)} does not match #{Ordinal.ordinalize(index + 1)} parameter's type #{type_to_string(type)}."
   end
 
   defp human_reason({:return_type_mismatch, value, type}) do
@@ -25,15 +23,11 @@ defmodule Hammox.TypeMatchError do
   end
 
   defp human_reason({:tuple_elem_type_mismatch, index, elem, elem_type}) do
-    "#{Ordinal.ordinalize(index + 1)} tuple element #{inspect(elem)} does not match #{
-      Ordinal.ordinalize(index + 1)
-    } element type #{type_to_string(elem_type)}."
+    "#{Ordinal.ordinalize(index + 1)} tuple element #{inspect(elem)} does not match #{Ordinal.ordinalize(index + 1)} element type #{type_to_string(elem_type)}."
   end
 
   defp human_reason({:elem_type_mismatch, index, elem, elem_type}) do
-    "Element #{inspect(elem)} at index #{index} does not match element type #{
-      type_to_string(elem_type)
-    }."
+    "Element #{inspect(elem)} at index #{index} does not match element type #{type_to_string(elem_type)}."
   end
 
   defp human_reason({:empty_list_type_mismatch, type}) do
@@ -49,9 +43,7 @@ defmodule Hammox.TypeMatchError do
   end
 
   defp human_reason({:improper_list_terminator_type_mismatch, terminator, terminator_type}) do
-    "Improper list terminator #{inspect(terminator)} does not match terminator type #{
-      type_to_string(terminator_type)
-    }."
+    "Improper list terminator #{inspect(terminator)} does not match terminator type #{type_to_string(terminator_type)}."
   end
 
   defp human_reason({:function_arity_type_mismatch, expected, actual}) do
@@ -63,11 +55,7 @@ defmodule Hammox.TypeMatchError do
   end
 
   defp human_reason({:map_key_type_mismatch, key, key_types}) when is_list(key_types) do
-    "Map key #{inspect(key)} does not match any of the allowed map key types #{
-      key_types
-      |> Enum.map(&type_to_string/1)
-      |> Enum.join(", ")
-    }."
+    "Map key #{inspect(key)} does not match any of the allowed map key types #{key_types |> Enum.map_join(", ", &type_to_string/1)}."
   end
 
   defp human_reason({:map_key_type_mismatch, key, key_type}) do
@@ -76,17 +64,11 @@ defmodule Hammox.TypeMatchError do
 
   defp human_reason({:map_value_type_mismatch, key, value, value_types})
        when is_list(value_types) do
-    "Map value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed map value types #{
-      value_types
-      |> Enum.map(&type_to_string/1)
-      |> Enum.join(", ")
-    }."
+    "Map value #{inspect(value)} for key #{inspect(key)} does not match any of the allowed map value types #{value_types |> Enum.map_join(", ", &type_to_string/1)}."
   end
 
   defp human_reason({:map_value_type_mismatch, key, value, value_type}) do
-    "Map value #{inspect(value)} for key #{inspect(key)} does not match map value type #{
-      type_to_string(value_type)
-    }."
+    "Map value #{inspect(value)} for key #{inspect(key)} does not match map value type #{type_to_string(value_type)}."
   end
 
   defp human_reason({:required_field_unfulfilled_map_type_mismatch, entry_type}) do
@@ -98,9 +80,7 @@ defmodule Hammox.TypeMatchError do
   end
 
   defp human_reason({:struct_name_type_mismatch, actual_struct_name, expected_struct_name}) do
-    "Expected the value to be a #{Utils.module_to_string(expected_struct_name)}, got a #{
-      Utils.module_to_string(actual_struct_name)
-    }."
+    "Expected the value to be a #{Utils.module_to_string(expected_struct_name)}, got a #{Utils.module_to_string(actual_struct_name)}."
   end
 
   defp human_reason({:module_fetch_failure, module_name}) do
@@ -118,12 +98,11 @@ defmodule Hammox.TypeMatchError do
   defp message_string(reasons) when is_list(reasons) do
     reasons
     |> Enum.zip(0..length(reasons))
-    |> Enum.map(fn {reason, index} ->
+    |> Enum.map_join("\n", fn {reason, index} ->
       reason
       |> human_reason()
       |> leftpad(index)
     end)
-    |> Enum.join("\n")
   end
 
   defp message_string(reason) when is_tuple(reason) do
@@ -154,8 +133,7 @@ defmodule Hammox.TypeMatchError do
     |> Code.Typespec.type_to_quoted()
     |> Macro.to_string()
     |> String.split("\n")
-    |> Enum.map(&String.replace(&1, ~r/ +/, " "))
-    |> Enum.join()
+    |> Enum.map_join(&String.replace(&1, ~r/ +/, " "))
     |> String.split(" :: ")
     |> case do
       [_, type_string] -> type_string
