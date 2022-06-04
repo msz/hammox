@@ -22,18 +22,34 @@ defmodule Hammox.Protect do
   `Hammox.protect/3` in batch usage.
   - `:funs` — An optional explicit list of functions you'd like to protect.
   Equivalent to the third parameter of `Hammox.protect/3` in batch usage.
+
+  Additionally multiple `behaviour` and `funs` options can be provided for
+  modules that implement multiple behaviours
+  - note: the `funs` options are optional but specific to the `behaviour` that
+    precedes them
+
+  ```
+  use Hammox.Protect,
+    module: Hammox.Test.MultiBehaviourImplementation,
+    behaviour: Hammox.Test.SmallBehaviour,
+    # the `funs` opt below effects the funs protected from `SmallBehaviour`
+    funs: [foo: 0, other_foo: 1],
+    behaviour: Hammox.Test.AdditionalBehaviour
+    # with no `funs` pt provided after `AdditionalBehaviour`, all callbacks
+    # will be protected
+  ````
   """
   alias Hammox.Utils
 
   defmacro __using__(opts) do
     opts_block =
       quote do
-        {module, behaviour, funs} = Hammox.Protect.extract_opts!(unquote(opts))
+        mod_behaviour_funs = Hammox.Protect.extract_opts!(unquote(opts))
       end
 
     funs_block =
       quote unquote: false do
-        for {name, arity} <- funs do
+        for {module, behaviour, funs} <- mod_behaviour_funs, {name, arity} <- funs do
           def unquote(name)(
                 unquote_splicing(
                   Enum.map(
@@ -76,7 +92,6 @@ defmodule Hammox.Protect do
   @doc false
   def extract_opts!(opts) do
     module = Keyword.get(opts, :module)
-    behaviour = Keyword.get(opts, :behaviour)
 
     if is_nil(module) do
       raise ArgumentError,
@@ -89,17 +104,45 @@ defmodule Hammox.Protect do
         """
     end
 
-    module_with_callbacks = behaviour || module
+    mods_and_funs =
+      opts
+      |> Keyword.take([:behaviour, :funs])
+      |> case do
+        # just the module in opts
+        [] ->
+          [{module, get_funs!(module)}]
 
-    funs = Keyword.get_lazy(opts, :funs, fn -> get_funs!(module_with_callbacks) end)
+        # module and funs in opts
+        [{:funs, funs}] ->
+          [{module, funs}]
 
-    if funs == [] do
-      raise ArgumentError,
-        message:
-          "The module #{inspect(module_with_callbacks)} does not contain any callbacks. Please use a behaviour with at least one callback."
-    end
+        # module multiple behaviours with or without funs
+        behaviours_and_maybe_funs ->
+          reduce_opts_to_behaviours_and_funs({behaviours_and_maybe_funs, []})
+      end
 
-    {module, behaviour, funs}
+    mods_and_funs
+    |> Enum.map(fn {module_with_callbacks, funs} ->
+      if funs == [] do
+        raise ArgumentError,
+          message:
+            "The module #{inspect(module_with_callbacks)} does not contain any callbacks. Please use a behaviour with at least one callback."
+      end
+
+      {module, module_with_callbacks, funs}
+    end)
+  end
+
+  defp reduce_opts_to_behaviours_and_funs({[], acc}) do
+    acc
+  end
+
+  defp reduce_opts_to_behaviours_and_funs({[{:behaviour, behaviour}, {:funs, funs} | rest], acc}) do
+    reduce_opts_to_behaviours_and_funs({rest, [{behaviour, funs} | acc]})
+  end
+
+  defp reduce_opts_to_behaviours_and_funs({[{:behaviour, behaviour} | rest], acc}) do
+    reduce_opts_to_behaviours_and_funs({rest, [{behaviour, get_funs!(behaviour)} | acc]})
   end
 
   @doc false
