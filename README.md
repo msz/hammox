@@ -1,6 +1,6 @@
 # Hammox
 
-[![Elixir CI](https://github.com/msz/hammox/actions/workflows/elixir.yml/badge.svg)](https://github.com/msz/hammox/actions/workflows/elixir.yml)
+[![CI](https://github.com/msz/hammox/actions/workflows/ci.yml/badge.svg)](https://github.com/msz/hammox/actions/workflows/ci.yml)
 [![Module Version](https://img.shields.io/hexpm/v/hammox.svg)](https://hex.pm/packages/hammox)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/hammox/)
 [![Total Download](https://img.shields.io/hexpm/dt/hammox.svg)](https://hex.pm/packages/hammox)
