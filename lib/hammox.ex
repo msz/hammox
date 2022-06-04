@@ -476,8 +476,43 @@ defmodule Hammox do
       {{^function_name, ^arity}, typespecs} -> typespecs
       _ -> false
     end)
-    |> Enum.map(fn typespec ->
-      Utils.replace_user_types(typespec, behaviour_module)
+    |> Enum.map(&guards_to_annotated_types(&1))
+    |> Enum.map(&Utils.replace_user_types(&1, behaviour_module))
+  end
+
+  defp guards_to_annotated_types({:type, _, :fun, _} = typespec), do: typespec
+
+  defp guards_to_annotated_types(
+         {:type, _, :bounded_fun,
+          [{:type, _, :fun, [{:type, _, :product, args}, return_value]}, constraints]}
+       ) do
+    type_lookup_map =
+      constraints
+      |> Enum.map(fn {:type, _, :constraint,
+                      [{:atom, _, :is_subtype}, [{:var, _, var_name}, type]]} ->
+        {var_name, type}
+      end)
+      |> Enum.into(%{})
+
+    new_args =
+      Enum.map(
+        args,
+        &annotate_vars(&1, type_lookup_map)
+      )
+
+    new_return_value = annotate_vars(return_value, type_lookup_map)
+
+    {:type, 0, :fun, [{:type, 0, :product, new_args}, new_return_value]}
+  end
+
+  defp annotate_vars(type, type_lookup_map) do
+    Utils.type_map(type, fn
+      {:var, _, var_name} ->
+        type_for_var = Map.fetch!(type_lookup_map, var_name)
+        {:ann_type, 0, [{:var, 0, var_name}, type_for_var]}
+
+      other ->
+        other
     end)
   end
 
