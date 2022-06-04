@@ -132,4 +132,6 @@ defmodule Hammox.Test.Behaviour do
 
   @opaque opaque_type :: :opaque_value
   @callback foo_opaque_type() :: opaque_type
+
+  @callback foo_guarded(arg) :: [arg] when arg: integer()
 end

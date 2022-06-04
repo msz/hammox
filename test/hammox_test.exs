@@ -1292,6 +1292,18 @@ defmodule HammoxTest do
     end
   end
 
+  describe "guarded functions" do
+    test "pass" do
+      TestMock |> expect(:foo_guarded, fn arg -> [arg] end)
+      assert [1] == TestMock.foo_guarded(1)
+    end
+
+    test "fail" do
+      TestMock |> expect(:foo_guarded, fn _ -> 1 end)
+      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_guarded(1) end)
+    end
+  end
+
   describe "expect/4" do
     test "protects mocks" do
       TestMock |> expect(:foo_none, fn -> :baz end)
