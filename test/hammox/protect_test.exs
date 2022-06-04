@@ -87,11 +87,11 @@ defmodule Hammox.ProtectTest do
     # Hammox.Test.SmallBehaviour
     assert_raise UndefinedFunctionError,
                  ~r[MultiProtectWithFuns.foo/0 is undefined or private],
-                 fn -> apply(MultiProtectWithFuns, :foo, []) end
+                 &MultiProtectWithFuns.foo/0
 
     assert_raise UndefinedFunctionError,
                  ~r[MultiProtectWithFuns.other_foo/0 is undefined or private],
-                 fn -> apply(MultiProtectWithFuns, :other_foo, []) end
+                 &MultiProtectWithFuns.other_foo/0
 
     assert 1 == MultiProtectWithFuns.other_foo(10)
 
