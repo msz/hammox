@@ -40,14 +40,6 @@ defmodule Hammox.Utils do
   end
 
   def check_module_exists(module) do
-    case Code.ensure_compiled(module) do
-      {:module, _} ->
-        true
-
-      _ ->
-        raise(ArgumentError,
-          message: "Could not find module #{module_to_string(module)}."
-        )
-    end
+    Code.ensure_compiled!(module)
   end
 end
