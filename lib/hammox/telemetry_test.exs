@@ -24,6 +24,10 @@ defmodule HammoxTest do
   describe "works with telemetry enabled" do
     setup do
       Application.put_env(:hammox, :enable_telemetry?, true)
+
+      on_exit(fn ->
+        Application.delete_env(:hammox, :enable_telemetry?)
+      end)
     end
 
     test "should use telemetry client" do
@@ -85,6 +89,10 @@ defmodule HammoxTest do
   describe "works with telemetry disabled" do
     setup do
       Application.put_env(:hammox, :enable_telemetry?, false)
+
+      on_exit(fn ->
+        Application.delete_env(:hammox, :enable_telemetry?)
+      end)
     end
 
     test "should use NoOp module" do
