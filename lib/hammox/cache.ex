@@ -1,24 +1,14 @@
 defmodule Hammox.Cache do
   @moduledoc false
-  use GenServer
 
   alias Hammox.Telemetry
-
-  def start_link(_initial_value) do
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  end
-
-  def init(_blah) do
-    :ets.new(:typespec_cache, [:named_table, read_concurrency: true])
-    {:ok, %{}}
-  end
 
   def put(key, value) do
     Telemetry.span(
       [:hammox, :cache_put],
       %{key: key, value: value},
       fn ->
-        result = GenServer.call(__MODULE__, {:put, key, value})
+        result = :persistent_term.put(key, value)
         {result, %{}}
       end
     )
@@ -26,20 +16,6 @@ defmodule Hammox.Cache do
 
   def get(key) do
     # telemetry for this function is FAR too expensive (1000x slower)
-    :ets.lookup(:typespec_cache, key)
-    |> process_lookup()
-  end
-
-  defp process_lookup([{_key, value}] = _lookup_result) do
-    value
-  end
-
-  defp process_lookup(_result) do
-    nil
-  end
-
-  def handle_call({:put, key, value}, _from, _storage) do
-    :ets.insert(:typespec_cache, {key, value})
-    {:reply, :ok, %{}}
+    :persistent_term.get(key, nil)
   end
 end

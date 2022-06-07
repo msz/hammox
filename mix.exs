@@ -23,8 +23,7 @@ defmodule Hammox.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
-      mod: {Hammox.Application, []}
+      extra_applications: [:logger]
     ]
   end
 
