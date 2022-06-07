@@ -11,6 +11,7 @@ defmodule Hammox do
   """
 
   alias Hammox.Cache
+  alias Hammox.Telemetry
   alias Hammox.TypeEngine
   alias Hammox.TypeMatchError
   alias Hammox.Utils
@@ -26,7 +27,7 @@ defmodule Hammox do
   See [Mox.allow/3](https://hexdocs.pm/mox/Mox.html#allow/3).
   """
   def allow(mock, owner_pid, allowed_via) do
-    :telemetry.span(
+    Telemetry.span(
       [:hammox, :allow],
       %{mock: mock, owner_pid: owner_pid, allowed_via: allowed_via},
       fn ->
@@ -45,7 +46,7 @@ defmodule Hammox do
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
   def expect(mock, function_name, n \\ 1, code) do
-    :telemetry.span(
+    Telemetry.span(
       [:hammox, :expect],
       %{mock: mock, function_name: function_name, expect_count: n},
       fn ->
@@ -60,7 +61,7 @@ defmodule Hammox do
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
   def stub(mock, function_name, code) do
-    :telemetry.span([:hammox, :stub], %{mock: mock, function_name: function_name}, fn ->
+    Telemetry.span([:hammox, :stub], %{mock: mock, function_name: function_name}, fn ->
       hammox_code = wrap(mock, function_name, code)
       result = Mox.stub(mock, function_name, hammox_code)
       {result, %{}}
@@ -101,7 +102,7 @@ defmodule Hammox do
   See [Mox.verify_on_exit!/1](https://hexdocs.pm/mox/Mox.html#verify_on_exit!/1).
   """
   def verify_on_exit!(context \\ %{}) do
-    :telemetry.span([:hammox, :verify_on_exit!], %{context: context}, fn ->
+    Telemetry.span([:hammox, :verify_on_exit!], %{context: context}, fn ->
       result = Mox.verify_on_exit!(context)
       {result, %{}}
     end)
@@ -394,7 +395,7 @@ defmodule Hammox do
 
   defp protected_code(code, typespecs, args) do
     return_value =
-      :telemetry.span([:hammox, :run_expect], %{}, fn ->
+      Telemetry.span([:hammox, :run_expect], %{}, fn ->
         return_value =
           case code do
             {module, function_name} -> apply(module, function_name, args)
@@ -411,7 +412,7 @@ defmodule Hammox do
 
   defp check_call(args, return_value, typespecs) when is_list(typespecs) do
     match_call_result =
-      :telemetry.span([:hammox, :check_call], %{}, fn ->
+      Telemetry.span([:hammox, :check_call], %{}, fn ->
         {result, check_call_count} =
           typespecs
           |> Enum.reduce_while({{:error, []}, 0}, fn typespec,
@@ -454,7 +455,7 @@ defmodule Hammox do
   end
 
   defp match_args(args, typespec) do
-    :telemetry.span([:hammox, :match_args], %{}, fn ->
+    Telemetry.span([:hammox, :match_args], %{}, fn ->
       result =
         args
         |> Enum.zip(0..(length(args) - 1))
@@ -479,9 +480,9 @@ defmodule Hammox do
   end
 
   defp match_return_value(return_value, typespec) do
-    :telemetry.span([:hammox, :match_return_value], %{}, fn ->
-      {:type, _, :fun, [_, return_type]} = typespec
-
+#{[{:type, 26, :fun, [{:type, 26, :product, []}, {:type, 26, :binary, [{:integer, 26, 3}, {:integer, 26, 0}]}]}], %{}}
+    Telemetry.span([:hammox, :match_return_value], %{}, fn ->
+      {:type, _, :fun, [flarp, return_type]} = typespec
       result =
         case TypeEngine.match_type(return_value, return_type) do
           {:error, reasons} ->
@@ -508,7 +509,7 @@ defmodule Hammox do
   end
 
   defp fetch_typespecs(behaviour_name, function_name, arity) do
-    :telemetry.span(
+    Telemetry.span(
       [:hammox, :fetch_typespecs],
       %{behaviour_name: behaviour_name, function_name: function_name, arity: arity},
       fn ->

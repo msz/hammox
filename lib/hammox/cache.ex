@@ -2,6 +2,8 @@ defmodule Hammox.Cache do
   @moduledoc false
   use GenServer
 
+  alias Hammox.Telemetry
+
   def start_link(_initial_value) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
@@ -12,7 +14,7 @@ defmodule Hammox.Cache do
   end
 
   def put(key, value) do
-    :telemetry.span(
+    Telemetry.span(
       [:hammox, :cache_put],
       %{key: key, value: value},
       fn ->
