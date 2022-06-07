@@ -26,6 +26,10 @@ defmodule HammoxTest do
       Application.put_env(:hammox, :enable_telemetry?, true)
     end
 
+    test "should use telemetry client" do
+      assert Hammox.Telemetry.TelemetryEnabled == Hammox.Telemetry.telemetry_module()
+    end
+
     test "decorate all functions inside the module" do
       assert %{other_foo_0: _, other_foo_1: _, foo_0: _} =
                Hammox.protect(Hammox.Test.BehaviourImplementation)
@@ -81,6 +85,10 @@ defmodule HammoxTest do
   describe "works with telemetry disabled" do
     setup do
       Application.put_env(:hammox, :enable_telemetry?, false)
+    end
+
+    test "should use NoOp module" do
+      assert Hammox.Telemetry.NoOp == Hammox.Telemetry.telemetry_module()
     end
 
     test "decorate all functions inside the module" do

@@ -481,7 +481,7 @@ defmodule Hammox do
 
   defp match_return_value(return_value, typespec) do
     Telemetry.span([:hammox, :match_return_value], %{}, fn ->
-      {:type, _, :fun, [flarp, return_type]} = typespec
+      {:type, _, :fun, [_, return_type]} = typespec
 
       result =
         case TypeEngine.match_type(return_value, return_type) do
