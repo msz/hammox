@@ -1,8 +1,10 @@
 defmodule Hammox.Telemetry.Behaviour do
+  @moduledoc false
   @callback span(list(), map(), function()) :: :ok
 end
 
 defmodule Hammox.Telemetry.NoOp do
+  @moduledoc false
   @behaviour Hammox.Telemetry.Behaviour
   @impl Hammox.Telemetry.Behaviour
   def span(_telemetry_tags, _telemetry_metadata, func_to_wrap) do
@@ -13,6 +15,7 @@ defmodule Hammox.Telemetry.NoOp do
 end
 
 defmodule Hammox.Telemetry.TelemetryEnabled do
+  @moduledoc false
   @behaviour Hammox.Telemetry.Behaviour
   @impl Hammox.Telemetry.Behaviour
   def span(telemetry_tags, telemetry_metadata, func_to_wrap) do
@@ -21,6 +24,13 @@ defmodule Hammox.Telemetry.TelemetryEnabled do
 end
 
 defmodule Hammox.Telemetry do
+  @moduledoc """
+    This module wraps :telemetry so users of this library can opt in/out of telemetry.
+  Telemetry is disabled by default and will use our NoOp client.
+  To enable telemetry set this in your application config:
+  `config :hammox, enable_telemetry?: true`
+  """
+
   def telemetry_module() do
     case Application.fetch_env(:hammox, :enable_telemetry?) do
       :error ->

@@ -410,6 +410,7 @@ defmodule Hammox do
     return_value
   end
 
+  # credo:disable-for-lines:30 Credo.Check.Refactor.Nesting
   defp check_call(args, return_value, typespecs) when is_list(typespecs) do
     match_call_result =
       Telemetry.span([:hammox, :check_call], %{}, fn ->
@@ -454,6 +455,7 @@ defmodule Hammox do
     :ok
   end
 
+  # credo:disable-for-lines:24 Credo.Check.Refactor.Nesting
   defp match_args(args, typespec) do
     Telemetry.span([:hammox, :match_args], %{}, fn ->
       result =
