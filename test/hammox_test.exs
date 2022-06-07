@@ -71,6 +71,14 @@ defmodule HammoxTest do
       assert %{foo_0: _, other_foo_0: _, other_foo_1: _} =
                Hammox.protect(Hammox.Test.SmallImplementation, Hammox.Test.SmallBehaviour)
     end
+
+    test "decorate all functions from multiple behaviours" do
+      assert %{foo_0: _, other_foo_0: _, other_foo_1: _, additional_foo_0: _} =
+               Hammox.protect(Hammox.Test.MultiBehaviourImplementation, [
+                 Hammox.Test.SmallBehaviour,
+                 Hammox.Test.AdditionalBehaviour
+               ])
+    end
   end
 
   describe "protect/3" do
@@ -775,6 +783,20 @@ defmodule HammoxTest do
     end
   end
 
+  describe "bool()" do
+    test "pass true" do
+      assert_pass(:foo_bool, true)
+    end
+
+    test "pass false" do
+      assert_pass(:foo_bool, false)
+    end
+
+    test "fail nil" do
+      assert_fail(:foo_bool, nil)
+    end
+  end
+
   describe "boolean()" do
     test "pass true" do
       assert_pass(:foo_boolean, true)
@@ -1267,6 +1289,18 @@ defmodule HammoxTest do
 
     test "fail" do
       assert_fail(:foo_opaque_type, :other)
+    end
+  end
+
+  describe "guarded functions" do
+    test "pass" do
+      TestMock |> expect(:foo_guarded, fn arg -> [arg] end)
+      assert [1] == TestMock.foo_guarded(1)
+    end
+
+    test "fail" do
+      TestMock |> expect(:foo_guarded, fn _ -> 1 end)
+      assert_raise(Hammox.TypeMatchError, fn -> TestMock.foo_guarded(1) end)
     end
   end
 

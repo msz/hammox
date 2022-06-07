@@ -354,6 +354,8 @@ defmodule Hammox.TypeEngine do
         {:error, [{:struct_name_type_mismatch, struct_name, other_struct_name}]}
 
       [{:type, _, :map_field_exact, [{:atom, _, :__struct__}, {:type, _, _, _} = struct_type]}] ->
+        # Even though the last clause is redundant, it reads better this way.
+        # credo:disable-for-next-line Credo.Check.Refactor.RedundantWithClauseResult
         with :ok <- match_type(struct_name, struct_type),
              :ok <-
                match_type(Map.delete(value, :__struct__), {:type, 0, :map, rest_field_types}) do
@@ -509,6 +511,10 @@ defmodule Hammox.TypeEngine do
     match_type(value, {:type, 0, :binary, [{:integer, 0, 0}, {:integer, 0, 1}]})
   end
 
+  def match_type(value, {:type, _, :bool, []}) do
+    match_type(value, {:type, 0, :boolean, []})
+  end
+
   def match_type(value, {:type, _, :boolean, []}) do
     match_type(value, {:type, 0, :union, [{:atom, 0, true}, {:atom, 0, false}]})
   end
@@ -649,7 +655,7 @@ defmodule Hammox.TypeEngine do
        ) do
     if function_exported?(module_name, :__protocol__, 1) and
          function_exported?(module_name, :impl_for, 1) do
-      case apply(module_name, :impl_for, [value]) do
+      case module_name.impl_for(value) do
         nil -> {:error, {:protocol_type_mismatch, value, module_name}}
         _ -> :ok
       end

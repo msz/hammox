@@ -1,8 +1,11 @@
 # Hammox
 
-[Hex package](https://hex.pm/packages/hammox)
-
-[API docs](https://hexdocs.pm/hammox/Hammox.html)
+[![CI](https://github.com/msz/hammox/actions/workflows/ci.yml/badge.svg)](https://github.com/msz/hammox/actions/workflows/ci.yml)
+[![Module Version](https://img.shields.io/hexpm/v/hammox.svg)](https://hex.pm/packages/hammox)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/hammox/)
+[![Total Download](https://img.shields.io/hexpm/dt/hammox.svg)](https://hex.pm/packages/hammox)
+[![License](https://img.shields.io/hexpm/l/hammox.svg)](https://github.com/msz/hammox/blob/master/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/msz/hammox.svg)](https://github.com/msz/hammox/commits/master)
 
 Hammox is a library for rigorous unit testing using mocks, explicit
 behaviours and contract tests. You can use it to ensure both your mocks and
@@ -10,7 +13,7 @@ implementations fulfill the same contract.
 
 It takes the excellent [Mox](https://github.com/plataformatec/mox) library
 and pushes its philosophy to its limits, providing automatic contract tests
-based on behaviour typespecs while maintaining full compability with code
+based on behaviour typespecs while maintaining full compatibility with code
 already using Mox.
 
 Hammox aims to catch as many contract bugs as possible while providing useful
@@ -24,7 +27,7 @@ delete it from your list of dependencies in `mix.exs`. Then add `:hammox`:
 ```elixir
 def deps do
   [
-    {:hammox, "~> 0.5", only: :test}
+    {:hammox, "~> 0.6", only: :test}
   ]
 end
 ```
@@ -37,7 +40,7 @@ Once you are comfortable with Mox, switch to using Hammox.
 
 ## Migrating from Mox
 
-Replace all occurences of `Mox` with `Hammox`. Nothing more is required; all
+Replace all occurrences of `Mox` with `Hammox`. Nothing more is required; all
 your mock calls in test are now ensured to conform to the behaviour typespec.
 
 ## Example
@@ -203,7 +206,7 @@ implementations are subjected to the exact same checks.
 
 Dialyzer is a static analysis tool; Hammox is a dynamic contract test
 provider. They operate differently and one can catch some bugs when the other
-doesn't. While it is true that Hammox would be redudant given a strong,
+doesn't. While it is true that Hammox would be redundant given a strong,
 strict, TypeScript-like type system for Elixir, Dialyzer is far from providing
 that sort of coverage.
 

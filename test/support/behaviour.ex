@@ -63,6 +63,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_as_boolean() :: as_boolean(:ok | nil)
   @callback foo_binary() :: binary()
   @callback foo_bitstring() :: bitstring()
+  @callback foo_bool() :: bool()
   @callback foo_boolean() :: boolean()
   @callback foo_byte() :: byte()
   @callback foo_char() :: char()
@@ -131,4 +132,6 @@ defmodule Hammox.Test.Behaviour do
 
   @opaque opaque_type :: :opaque_value
   @callback foo_opaque_type() :: opaque_type
+
+  @callback foo_guarded(arg) :: [arg] when arg: integer()
 end

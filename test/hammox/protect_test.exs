@@ -57,4 +57,45 @@ defmodule Hammox.ProtectTest do
   test "using Protect creates protected versions of functions from given behaviour and implementation" do
     assert_raise Hammox.TypeMatchError, fn -> behaviour_wrong_typespec() end
   end
+
+  defmodule MultiProtect do
+    use Hammox.Protect,
+      module: Hammox.Test.MultiBehaviourImplementation,
+      behaviour: Hammox.Test.SmallBehaviour,
+      behaviour: Hammox.Test.AdditionalBehaviour
+  end
+
+  test "using Protect with multiple behaviour opts creates expected functions" do
+    # Hammox.Test.SmallBehaviour
+    assert_raise Hammox.TypeMatchError, fn -> MultiProtect.foo() end
+    assert 1 == MultiProtect.other_foo()
+    assert 1 == MultiProtect.other_foo(10)
+
+    # Hammox.Test.AdditionalBehaviour
+    assert 1 == MultiProtect.additional_foo()
+  end
+
+  defmodule MultiProtectWithFuns do
+    use Hammox.Protect,
+      module: Hammox.Test.MultiBehaviourImplementation,
+      behaviour: Hammox.Test.SmallBehaviour,
+      funs: [other_foo: 1],
+      behaviour: Hammox.Test.AdditionalBehaviour
+  end
+
+  test "using Protect with multiple behaviour / funs opts creates expected functions" do
+    # Hammox.Test.SmallBehaviour
+    assert_raise UndefinedFunctionError,
+                 ~r[MultiProtectWithFuns.foo/0 is undefined or private],
+                 &MultiProtectWithFuns.foo/0
+
+    assert_raise UndefinedFunctionError,
+                 ~r[MultiProtectWithFuns.other_foo/0 is undefined or private],
+                 &MultiProtectWithFuns.other_foo/0
+
+    assert 1 == MultiProtectWithFuns.other_foo(10)
+
+    # Hammox.Test.AdditionalBehaviour
+    assert 1 == MultiProtectWithFuns.additional_foo()
+  end
 end

@@ -1,7 +1,8 @@
 defmodule Hammox.MixProject do
   use Mix.Project
 
-  @version "0.5.0"
+  @source_url "https://github.com/msz/hammox"
+  @version "0.6.0"
 
   def project do
     [
@@ -15,13 +16,7 @@ defmodule Hammox.MixProject do
 
       # Docs
       name: "Hammox",
-      description: "Automated contract testing for functions and mocks",
-      source_url: "https://github.com/msz/hammox",
-      source_ref: "v#{@version}",
-      docs: [
-        main: "readme",
-        extras: ["README.md", "guides/Telemetry.md"]
-      ],
+      docs: docs(),
       package: package()
     ]
   end
@@ -45,21 +40,35 @@ defmodule Hammox.MixProject do
       {:ordinal, "~> 0.1"},
       {:telemetry, "~> 1.0"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 
   defp package do
     [
-      licenses: ["Apache 2.0"],
+      description: "Automated contract testing for functions and mocks.",
+      licenses: ["Apache-2.0"],
       maintainers: [
         "Michał Szewczak"
       ],
       files: ["lib", "mix.exs", "LICENSE", "README.md"],
       links: %{
-        "GitHub" => "https://github.com/msz/hammox",
+        "GitHub" => @source_url,
         "Mox" => "https://hex.pm/packages/mox"
       }
+    ]
+  end
+
+  defp docs do
+    [
+      extras: [
+        LICENSE: [title: "License"],
+        "README.md": [title: "Overview"]
+      ],
+      main: "readme",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
+      formatters: ["html"]
     ]
   end
 

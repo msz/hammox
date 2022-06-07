@@ -132,8 +132,16 @@ defmodule Hammox do
   def protect(mfa, behaviour_name)
 
   @spec protect(module :: module(), funs :: [function_arity_pair()]) :: %{atom() => fun()}
-  def protect(module, funs) when is_atom(module) and is_list(funs),
-    do: protect(module, module, funs)
+  def protect(module, [{function, arity} | _] = funs)
+      when is_atom(module) and is_atom(function) and (is_integer(arity) or is_list(arity)),
+      do: protect(module, module, funs)
+
+  def protect(module, [behaviour | _] = behaviour_names)
+      when is_atom(module) and is_atom(behaviour) do
+    Enum.reduce(behaviour_names, %{}, fn behaviour_name, acc ->
+      Map.merge(acc, protect(module, behaviour_name))
+    end)
+  end
 
   @spec protect(mfa :: mfa(), behaviour_name :: module()) :: fun()
   def protect({module, function_name, arity} = mfa, behaviour_name)
@@ -220,6 +228,38 @@ defmodule Hammox do
     add_3: add_3,
     multiply_2: multiply_2
   } = Hammox.protect(TestCalculator, Calculator, add: [2, 3], multiply: 2)
+  ```
+
+  ## Batch usage for multiple behviours
+
+  You can decorate all functions defined by any number of behaviours by passing an
+  implementation module and a list of behaviour modules.
+
+  The returned map is useful as the return value for a test setup callback to
+  set test context for all tests to use.
+
+  Example:
+  ```elixir
+  defmodule Calculator do
+    @callback add(integer(), integer()) :: integer()
+    @callback multiply(integer(), integer()) :: integer()
+  end
+
+  defmodule AdditionalCalculator do
+    @callback subtract(integer(), integer()) :: integer()
+  end
+
+  defmodule TestCalculator do
+    def add(a, b), do: a + b
+    def multiply(a, b), do: a * b
+    def subtract(a, b), do: a - b
+  end
+
+  %{
+    add_2: add_2,
+    multiply_2: multiply_2
+    subtract_2: subtract_2
+  } = Hammox.protect(TestCalculator, [Calculator, AdditionalCalculator])
   ```
 
   ## Behaviour-implementation shortcuts
@@ -401,6 +441,8 @@ defmodule Hammox do
   end
 
   defp match_call(args, return_value, typespec) do
+    # Even though the last clause is redundant, it reads better this way.
+    # credo:disable-for-next-line Credo.Check.Refactor.RedundantWithClauseResult
     with :ok <- match_args(args, typespec),
          :ok <- match_return_value(return_value, typespec) do
       :ok
@@ -496,8 +538,43 @@ defmodule Hammox do
       {{^function_name, ^arity}, typespecs} -> typespecs
       _ -> false
     end)
-    |> Enum.map(fn typespec ->
-      Utils.replace_user_types(typespec, behaviour_module)
+    |> Enum.map(&guards_to_annotated_types(&1))
+    |> Enum.map(&Utils.replace_user_types(&1, behaviour_module))
+  end
+
+  defp guards_to_annotated_types({:type, _, :fun, _} = typespec), do: typespec
+
+  defp guards_to_annotated_types(
+         {:type, _, :bounded_fun,
+          [{:type, _, :fun, [{:type, _, :product, args}, return_value]}, constraints]}
+       ) do
+    type_lookup_map =
+      constraints
+      |> Enum.map(fn {:type, _, :constraint,
+                      [{:atom, _, :is_subtype}, [{:var, _, var_name}, type]]} ->
+        {var_name, type}
+      end)
+      |> Enum.into(%{})
+
+    new_args =
+      Enum.map(
+        args,
+        &annotate_vars(&1, type_lookup_map)
+      )
+
+    new_return_value = annotate_vars(return_value, type_lookup_map)
+
+    {:type, 0, :fun, [{:type, 0, :product, new_args}, new_return_value]}
+  end
+
+  defp annotate_vars(type, type_lookup_map) do
+    Utils.type_map(type, fn
+      {:var, _, var_name} ->
+        type_for_var = Map.fetch!(type_lookup_map, var_name)
+        {:ann_type, 0, [{:var, 0, var_name}, type_for_var]}
+
+      other ->
+        other
     end)
   end
 
