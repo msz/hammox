@@ -1,5 +1,10 @@
 # Telemetry in Hammox
   When running a sufficiently large test suite using Hammox it can be important to diagnose any performance bottlenecks.
+  To enable telemetry reporting in hammox put this in your application config:
+  ```elixir
+    config :hammox,
+      enable_telemetry?: true
+  ```
 ## Start Events
   - `[:hammox, :expect, :start]`
     - metadata:
