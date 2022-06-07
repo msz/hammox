@@ -480,9 +480,9 @@ defmodule Hammox do
   end
 
   defp match_return_value(return_value, typespec) do
-#{[{:type, 26, :fun, [{:type, 26, :product, []}, {:type, 26, :binary, [{:integer, 26, 3}, {:integer, 26, 0}]}]}], %{}}
     Telemetry.span([:hammox, :match_return_value], %{}, fn ->
       {:type, _, :fun, [flarp, return_type]} = typespec
+
       result =
         case TypeEngine.match_type(return_value, return_type) do
           {:error, reasons} ->

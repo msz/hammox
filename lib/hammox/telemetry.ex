@@ -21,21 +21,27 @@ defmodule Hammox.Telemetry.TelemetryEnabled do
 end
 
 defmodule Hammox.Telemetry do
-  defp telemetry_module() do
-    #enabled? = Application.get_env(:hammox, :enable_telemetry?, false)
-    enabled? = false
-    IO.inspect(enabled?, label: :telemetry_enabled?)
-    if enabled? do
-      Hammox.Telemetry.TelemetryEnabled
-    else
-      Hammox.Telemetry.NoOp
+  def telemetry_module() do
+    case Application.fetch_env(:hammox, :enable_telemetry?) do
+      :error ->
+        # default to NoOp implementation
+        Hammox.Telemetry.NoOp
+
+      {:ok, enabled?} ->
+        if enabled? do
+          # if enable_telemetry? is true use the TelemetryEnabled implementation
+          Hammox.Telemetry.TelemetryEnabled
+        else
+          # if enable_telemetry? is false use NoOp implementation
+          Hammox.Telemetry.NoOp
+        end
     end
   end
 
   @behaviour Hammox.Telemetry.Behaviour
   @impl Hammox.Telemetry.Behaviour
   def span(telemetry_tags, telemetry_metadata, func_to_wrap) do
-    #telemetry_module().span(telemetry_tags, telemetry_metadata, func_to_wrap)
+    # telemetry_module().span(telemetry_tags, telemetry_metadata, func_to_wrap)
     tm = telemetry_module()
     tm.span(telemetry_tags, telemetry_metadata, func_to_wrap)
   end
