@@ -140,7 +140,7 @@ defmodule RealDatabaseTest do
 
   test "get_users/0 returns list of users" do
     get_users_0 = Hammox.protect({RealDatabase, :get_users, 0}, Database)
-    assert {:ok, ["jim", "joe"]} == get_users_0.()
+    assert {:ok, ["real-jim", "real-joe"]} == get_users_0.()
   end
 end
 ```
@@ -157,7 +157,7 @@ defmodule RealDatabaseTest do
   end
 
   test "get_users/0 returns list of users", %{get_users_0: get_users_0} do
-    assert {:ok, ["jim", "joe"]} == get_users_0.()
+    assert {:ok, ["real-jim", "real-joe"]} == get_users_0.()
   end
 end
 ```
@@ -176,7 +176,7 @@ defmodule RealDatabaseTest do
   end
 
   test "get_users/0 returns list of users", %{get_users_0: get_users_0} do
-    assert {:ok, ["jim", "joe"]} == get_users_0.()
+    assert {:ok, ["real-jim", "real-joe"]} == get_users_0.()
   end
 end
 ```
@@ -191,7 +191,7 @@ defmodule RealDatabaseTest do
   use Hammox.Protect, module: RealDatabase, behaviour: Database
 
   test "get_users/0 returns list of users" do
-    assert {:ok, ["jim", "joe"]} == get_users()
+    assert {:ok, ["real-jim", "real-joe"]} == get_users()
   end
 end
 ```
