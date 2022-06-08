@@ -37,7 +37,6 @@ defmodule Hammox.MixProject do
     [
       {:mox, "~> 1.0"},
       {:ordinal, "~> 0.1"},
-      {:telemetry, "~> 1.0"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
