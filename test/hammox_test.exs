@@ -1320,8 +1320,7 @@ defmodule HammoxTest do
 
   defp assert_pass(function_name, value) do
     TestMock |> expect(function_name, fn -> value end)
-    result = apply(TestMock, function_name, [])
-    assert value == result
+    assert value == apply(TestMock, function_name, [])
   end
 
   defp assert_fail(function_name, value) do
