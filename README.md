@@ -233,10 +233,6 @@ Mox for that specific instance. They will interoperate without problems.
 - For anonymous function types in typespecs, only the arity is checked.
 Parameter types and return types are not checked.
 
-## Telemetry
-
-Hammox now includes telemetry events! See [Telemetry Guide](https://hexdocs.pm/hammox/Telemetry.html) for more information.
-
 ## License
 
 Copyright 2019 Michał Szewczak

@@ -11,7 +11,6 @@ defmodule Hammox do
   """
 
   alias Hammox.Cache
-  alias Hammox.Telemetry
   alias Hammox.TypeEngine
   alias Hammox.TypeMatchError
   alias Hammox.Utils
@@ -26,16 +25,7 @@ defmodule Hammox do
   @doc """
   See [Mox.allow/3](https://hexdocs.pm/mox/Mox.html#allow/3).
   """
-  def allow(mock, owner_pid, allowed_via) do
-    Telemetry.span(
-      [:hammox, :allow],
-      %{mock: mock, owner_pid: owner_pid, allowed_via: allowed_via},
-      fn ->
-        result = Mox.allow(mock, owner_pid, allowed_via)
-        {result, %{}}
-      end
-    )
-  end
+  defdelegate allow(mock, owner_pid, allowed_via), to: Mox
 
   @doc """
   See [Mox.defmock/2](https://hexdocs.pm/mox/Mox.html#defmock/2).
@@ -46,26 +36,16 @@ defmodule Hammox do
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
   def expect(mock, function_name, n \\ 1, code) do
-    Telemetry.span(
-      [:hammox, :expect],
-      %{mock: mock, function_name: function_name, expect_count: n},
-      fn ->
-        hammox_code = wrap(mock, function_name, code)
-        result = Mox.expect(mock, function_name, n, hammox_code)
-        {result, %{}}
-      end
-    )
+    hammox_code = wrap(mock, function_name, code)
+    Mox.expect(mock, function_name, n, hammox_code)
   end
 
   @doc """
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
   def stub(mock, function_name, code) do
-    Telemetry.span([:hammox, :stub], %{mock: mock, function_name: function_name}, fn ->
-      hammox_code = wrap(mock, function_name, code)
-      result = Mox.stub(mock, function_name, hammox_code)
-      {result, %{}}
-    end)
+    hammox_code = wrap(mock, function_name, code)
+    Mox.stub(mock, function_name, hammox_code)
   end
 
   @doc """
@@ -101,12 +81,7 @@ defmodule Hammox do
   @doc """
   See [Mox.verify_on_exit!/1](https://hexdocs.pm/mox/Mox.html#verify_on_exit!/1).
   """
-  def verify_on_exit!(context \\ %{}) do
-    Telemetry.span([:hammox, :verify_on_exit!], %{context: context}, fn ->
-      result = Mox.verify_on_exit!(context)
-      {result, %{}}
-    end)
-  end
+  defdelegate verify_on_exit!(context \\ %{}), to: Mox
 
   @doc since: "0.1.0"
   @doc """
@@ -395,48 +370,32 @@ defmodule Hammox do
 
   defp protected_code(code, typespecs, args) do
     return_value =
-      Telemetry.span([:hammox, :run_expect], %{}, fn ->
-        return_value =
-          case code do
-            {module, function_name} -> apply(module, function_name, args)
-            anonymous when is_function(anonymous) -> apply(anonymous, args)
-          end
-
-        {return_value, %{}}
-      end)
+      case code do
+        {module, function_name} -> apply(module, function_name, args)
+        anonymous when is_function(anonymous) -> apply(anonymous, args)
+      end
 
     check_call(args, return_value, typespecs)
 
     return_value
   end
 
-  # credo:disable-for-lines:30 Credo.Check.Refactor.Nesting
   defp check_call(args, return_value, typespecs) when is_list(typespecs) do
-    match_call_result =
-      Telemetry.span([:hammox, :check_call], %{}, fn ->
-        {result, check_call_count} =
-          typespecs
-          |> Enum.reduce_while({{:error, []}, 0}, fn typespec,
-                                                     {{:error, reasons} = result, counter} ->
-            counter = counter + 1
+    typespecs
+    |> Enum.reduce_while({:error, []}, fn typespec, {:error, reasons} = result ->
+      case match_call(args, return_value, typespec) do
+        :ok ->
+          {:halt, :ok}
 
-            case match_call(args, return_value, typespec) do
-              :ok ->
-                {:halt, {:ok, counter}}
-
-              {:error, new_reasons} = new_result ->
-                {:cont,
-                 if(length(reasons) >= length(new_reasons),
-                   do: {result, counter},
-                   else: {new_result, counter}
-                 )}
-            end
-          end)
-
-        {result, %{total_specs_checked: check_call_count}}
-      end)
-
-    case match_call_result do
+        {:error, new_reasons} = new_result ->
+          {:cont,
+           if(length(reasons) >= length(new_reasons),
+             do: result,
+             else: new_result
+           )}
+      end
+    end)
+    |> case do
       {:error, _} = error -> raise TypeMatchError, error
       :ok -> :ok
     end
@@ -457,45 +416,35 @@ defmodule Hammox do
 
   # credo:disable-for-lines:24 Credo.Check.Refactor.Nesting
   defp match_args(args, typespec) do
-    Telemetry.span([:hammox, :match_args], %{}, fn ->
-      result =
-        args
-        |> Enum.zip(0..(length(args) - 1))
-        |> Enum.map(fn {arg, index} ->
-          arg_type = arg_typespec(typespec, index)
+    args
+    |> Enum.zip(0..(length(args) - 1))
+    |> Enum.map(fn {arg, index} ->
+      arg_type = arg_typespec(typespec, index)
 
-          case TypeEngine.match_type(arg, arg_type) do
-            {:error, reasons} ->
-              {:error, [{:arg_type_mismatch, index, arg, arg_type} | reasons]}
+      case TypeEngine.match_type(arg, arg_type) do
+        {:error, reasons} ->
+          {:error, [{:arg_type_mismatch, index, arg, arg_type} | reasons]}
 
-            :ok ->
-              :ok
-          end
-        end)
-        |> Enum.max_by(fn
-          {:error, reasons} -> length(reasons)
-          :ok -> 0
-        end)
-
-      {result, %{}}
+        :ok ->
+          :ok
+      end
+    end)
+    |> Enum.max_by(fn
+      {:error, reasons} -> length(reasons)
+      :ok -> 0
     end)
   end
 
   defp match_return_value(return_value, typespec) do
-    Telemetry.span([:hammox, :match_return_value], %{}, fn ->
-      {:type, _, :fun, [_, return_type]} = typespec
+    {:type, _, :fun, [_, return_type]} = typespec
 
-      result =
-        case TypeEngine.match_type(return_value, return_type) do
-          {:error, reasons} ->
-            {:error, [{:return_type_mismatch, return_value, return_type} | reasons]}
+    case TypeEngine.match_type(return_value, return_type) do
+      {:error, reasons} ->
+        {:error, [{:return_type_mismatch, return_value, return_type} | reasons]}
 
-          :ok ->
-            :ok
-        end
-
-      {result, %{}}
-    end)
+      :ok ->
+        :ok
+    end
   end
 
   defp fetch_typespecs!(behaviour_name, function_name, arity) do
@@ -511,26 +460,17 @@ defmodule Hammox do
   end
 
   defp fetch_typespecs(behaviour_name, function_name, arity) do
-    Telemetry.span(
-      [:hammox, :fetch_typespecs],
-      %{behaviour_name: behaviour_name, function_name: function_name, arity: arity},
-      fn ->
-        cache_key = {:typespecs, {behaviour_name, function_name, arity}}
+    cache_key = {:typespecs, {behaviour_name, function_name, arity}}
 
-        result =
-          case Cache.get(cache_key) do
-            nil ->
-              typespecs = do_fetch_typespecs(behaviour_name, function_name, arity)
-              Cache.put(cache_key, typespecs)
-              typespecs
+    case Cache.get(cache_key) do
+      nil ->
+        typespecs = do_fetch_typespecs(behaviour_name, function_name, arity)
+        Cache.put(cache_key, typespecs)
+        typespecs
 
-            typespecs ->
-              typespecs
-          end
-
-        {result, %{}}
-      end
-    )
+      typespecs ->
+        typespecs
+    end
   end
 
   defp do_fetch_typespecs(behaviour_module, function_name, arity) do
