@@ -36,16 +36,16 @@ defmodule Hammox do
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
   def expect(mock, function_name, n \\ 1, code) do
-    hammox_code = wrap(mock, function_name, code)
-    Mox.expect(mock, function_name, n, hammox_code)
+        hammox_code = wrap(mock, function_name, code)
+        Mox.expect(mock, function_name, n, hammox_code)
   end
 
   @doc """
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
   def stub(mock, function_name, code) do
-    hammox_code = wrap(mock, function_name, code)
-    Mox.stub(mock, function_name, hammox_code)
+      hammox_code = wrap(mock, function_name, code)
+      Mox.stub(mock, function_name, hammox_code)
   end
 
   @doc """
@@ -369,11 +369,11 @@ defmodule Hammox do
   end
 
   defp protected_code(code, typespecs, args) do
-    return_value =
-      case code do
-        {module, function_name} -> apply(module, function_name, args)
-        anonymous when is_function(anonymous) -> apply(anonymous, args)
-      end
+        return_value =
+          case code do
+            {module, function_name} -> apply(module, function_name, args)
+            anonymous when is_function(anonymous) -> apply(anonymous, args)
+          end
 
     check_call(args, return_value, typespecs)
 
@@ -382,23 +382,24 @@ defmodule Hammox do
 
   defp check_call(args, return_value, typespecs) when is_list(typespecs) do
     typespecs
-    |> Enum.reduce_while({:error, []}, fn typespec, {:error, reasons} = result ->
-      case match_call(args, return_value, typespec) do
-        :ok ->
-          {:halt, :ok}
+    |> Enum.reduce_while({:error, []}, fn typespec,
+      {:error, reasons} = result ->
+        case match_call(args, return_value, typespec) do
+          :ok ->
+            {:halt, :ok}
 
-        {:error, new_reasons} = new_result ->
-          {:cont,
-           if(length(reasons) >= length(new_reasons),
-             do: result,
-             else: new_result
-           )}
-      end
-    end)
-    |> case do
-      {:error, _} = error -> raise TypeMatchError, error
-      :ok -> :ok
-    end
+          {:error, new_reasons} = new_result ->
+            {:cont,
+              if(length(reasons) >= length(new_reasons),
+                do: result,
+                else: new_result
+              )}
+              end
+        end)
+        |> case do
+          {:error, _} = error -> raise TypeMatchError, error
+          :ok -> :ok
+        end
   end
 
   defp match_call(args, return_value, typespec) do
@@ -414,7 +415,6 @@ defmodule Hammox do
     :ok
   end
 
-  # credo:disable-for-lines:24 Credo.Check.Refactor.Nesting
   defp match_args(args, typespec) do
     args
     |> Enum.zip(0..(length(args) - 1))
