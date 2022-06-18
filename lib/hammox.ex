@@ -35,17 +35,17 @@ defmodule Hammox do
   @doc """
   See [Mox.expect/4](https://hexdocs.pm/mox/Mox.html#expect/4).
   """
-  def expect(mock, name, n \\ 1, code) do
-    hammox_code = wrap(mock, name, code)
-    Mox.expect(mock, name, n, hammox_code)
+  def expect(mock, function_name, n \\ 1, code) do
+    hammox_code = wrap(mock, function_name, code)
+    Mox.expect(mock, function_name, n, hammox_code)
   end
 
   @doc """
   See [Mox.stub/3](https://hexdocs.pm/mox/Mox.html#stub/3).
   """
-  def stub(mock, name, code) do
-    hammox_code = wrap(mock, name, code)
-    Mox.stub(mock, name, hammox_code)
+  def stub(mock, function_name, code) do
+    hammox_code = wrap(mock, function_name, code)
+    Mox.stub(mock, function_name, hammox_code)
   end
 
   @doc """
@@ -388,7 +388,11 @@ defmodule Hammox do
           {:halt, :ok}
 
         {:error, new_reasons} = new_result ->
-          {:cont, if(length(reasons) >= length(new_reasons), do: result, else: new_result)}
+          {:cont,
+           if(length(reasons) >= length(new_reasons),
+             do: result,
+             else: new_result
+           )}
       end
     end)
     |> case do
