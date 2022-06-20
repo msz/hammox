@@ -1,8 +1,17 @@
 defmodule Hammox.Cache do
   @moduledoc false
 
+  alias Hammox.Telemetry
+
   def put(key, value) do
-    :persistent_term.put(key, value)
+    Telemetry.span(
+      [:hammox, :cache_put],
+      %{key: key, value: value},
+      fn ->
+        result = :persistent_term.put(key, value)
+        {result, %{}}
+      end
+    )
   end
 
   def get(key) do
