@@ -31,7 +31,7 @@ defmodule Hammox.Telemetry do
   `config :hammox, enable_telemetry?: true`
   """
 
-  def telemetry_module() do
+  def telemetry_module do
     case Application.fetch_env(:hammox, :enable_telemetry?) do
       :error ->
         # default to NoOp implementation
