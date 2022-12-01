@@ -162,10 +162,6 @@ defmodule Hammox.TypeMatchError do
     padding
   end
 
-  defp reset_padding() do
-    put_padding("")
-  end
-
   defp get_padding() do
     Process.get(:padding)
   end
