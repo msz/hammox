@@ -138,8 +138,7 @@ defmodule Hammox.TypeMatchError do
     padding = "\n" <> get_padding()
 
     type_string
-    |> String.split(" | ")
-    |> Enum.join(padding <> " | ")
+    |> String.replace(" | ", padding <> " | ")
     |> String.replace_prefix("", padding)
   end
 
@@ -148,8 +147,7 @@ defmodule Hammox.TypeMatchError do
 
     value
     |> inspect(limit: :infinity, printable_limit: 500, pretty: true)
-    |> String.split("\n")
-    |> Enum.join("\n" <> padding)
+    |> String.replace("\n", "\n" <> padding)
   end
 
   defp put_padding(level) when is_integer(level) do
