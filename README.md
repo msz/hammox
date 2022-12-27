@@ -237,6 +237,15 @@ Parameter types and return types are not checked.
 
 Hammox now includes telemetry events! See [Telemetry Guide](https://hexdocs.pm/hammox/Telemetry.html) for more information.
 
+## Configuration
+
+Hammox includes experimental pretty printing of error messages.
+To enable it add to  `config/test.exs`
+
+```elixir
+config :hammox, pretty: true
+```
+
 ## License
 
 Copyright 2019 Michał Szewczak
