@@ -364,123 +364,15 @@ defmodule Hammox.TypeEngine do
     end
   end
 
-  # If you can sensibly refactor the map matching code below so that the Credo
-  # checks pass, I will personally buy you a beer — @msz
-  # credo:disable-for-lines:140 Credo.Check.Refactor.Nesting
-  # credo:disable-for-lines:139 Credo.Check.Refactor.CyclomaticComplexity
   def match_type(value, {:type, _, :map, map_entry_types}) when is_map(value) do
-    hit_map =
-      map_entry_types
-      |> Enum.map(fn
-        {:type, _, :map_field_exact, [key_type, value_type]} ->
-          {:required, {key_type, value_type}}
-
-        {:type, _, :map_field_assoc, [key_type, value_type]} ->
-          {:optional, {key_type, value_type}}
-      end)
-      |> Enum.map(fn key -> {key, 0} end)
-      |> Enum.into(%{})
-
-    type_match_result =
-      Enum.reduce_while(value, hit_map, fn {key, value}, current_hit_map ->
-        entry_match_results =
-          Enum.map(current_hit_map, fn {{_, {key_type, value_type}} = hit_map_key, _hits} ->
-            {hit_map_key, match_type(key, key_type), match_type(value, value_type)}
-          end)
-
-        full_hits =
-          Enum.filter(entry_match_results, fn
-            {_, :ok, :ok} -> true
-            {_, _, _} -> false
-          end)
-
-        entry_result =
-          case full_hits do
-            [_ | _] ->
-              Enum.reduce(full_hits, current_hit_map, fn {hit_map_key, _, _},
-                                                         current_current_hit_map ->
-                Map.update!(current_current_hit_map, hit_map_key, fn hits -> hits + 1 end)
-              end)
-
-            [] ->
-              key_hits =
-                Enum.filter(entry_match_results, fn
-                  {_, :ok, _} -> true
-                  {_, _, _} -> false
-                end)
-
-              case key_hits do
-                [] ->
-                  types_and_reasons =
-                    Enum.map(entry_match_results, fn {{_, {key_type, _}}, {:error, key_reasons},
-                                                      _} ->
-                      {key_type, key_reasons}
-                    end)
-
-                  case types_and_reasons do
-                    [{key_type, key_reasons}] ->
-                      {:error, [{:map_key_type_mismatch, key, key_type} | key_reasons]}
-
-                    [_ | _] ->
-                      {:error,
-                       [
-                         {:map_key_type_mismatch, key,
-                          Enum.map(types_and_reasons, fn {key_type, _} -> key_type end)}
-                       ]}
-                  end
-
-                [_ | _] ->
-                  types_and_reasons =
-                    Enum.map(key_hits, fn {{_, {_, value_type}}, _, {:error, value_reasons}} ->
-                      {value_type, value_reasons}
-                    end)
-
-                  case types_and_reasons do
-                    [{value_type, value_reasons}] ->
-                      {:error,
-                       [{:map_value_type_mismatch, key, value, value_type} | value_reasons]}
-
-                    [_ | _] ->
-                      {:error,
-                       [
-                         {:map_value_type_mismatch, key, value,
-                          Enum.map(types_and_reasons, fn {_, value_type} -> value_type end)}
-                       ]}
-                  end
-              end
-          end
-
-        case entry_result do
-          {:error, _} = error -> {:halt, error}
-          entry_hit_map when is_map(entry_hit_map) -> {:cont, entry_hit_map}
-        end
-      end)
-
-    case type_match_result do
+    case type_match_result(value, map_entry_types) do
       {:error, _} = error ->
         error
 
       required_hits when is_map(required_hits) ->
-        unfulfilled_type =
-          Enum.find(required_hits, fn
-            {{:required, _}, 0} -> true
-            {_, _} -> false
-          end)
-
-        case unfulfilled_type do
-          {{_, {{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}}, _} ->
-            {:error, [{:struct_name_type_mismatch, nil, expected_struct_name}]}
-
-          {{_, {key_type, value_type}}, _} ->
-            {:error,
-             [
-               {:required_field_unfulfilled_map_type_mismatch,
-                {:type, 0, :map_field_exact, [key_type, value_type]}}
-             ]}
-
-          nil ->
-            :ok
-        end
+        required_hits
+        |> find_unfulfilled_type()
+        |> process_unfulfilled_type()
     end
   end
 
@@ -791,5 +683,132 @@ defmodule Hammox.TypeEngine do
 
   defp type_mismatch(value, type) do
     {:error, [{:type_mismatch, value, type}]}
+  end
+
+  defp compute_hit_map(map_entry_types) do
+    Map.new(map_entry_types, fn
+      {:type, _, :map_field_exact, [key_type, value_type]} ->
+        {{:required, {key_type, value_type}}, 0}
+
+      {:type, _, :map_field_assoc, [key_type, value_type]} ->
+        {{:optional, {key_type, value_type}}, 0}
+    end)
+  end
+
+  defp type_match_result(value, map_entry_types) do
+    hit_map = compute_hit_map(map_entry_types)
+
+    Enum.reduce_while(value, hit_map, fn {key, value}, current_hit_map ->
+      case entry_result(current_hit_map, key, value) do
+        {:error, _} = error -> {:halt, error}
+        entry_hit_map when is_map(entry_hit_map) -> {:cont, entry_hit_map}
+      end
+    end)
+  end
+
+  defp entry_result(current_hit_map, key, value) do
+    entry_match_results = compute_entry_match_results(current_hit_map, key, value)
+
+    case filter_full_hits(entry_match_results) do
+      [] -> process_key_hits(entry_match_results, key, value)
+      full_hits when is_list(full_hits) -> process_full_hits(full_hits, current_hit_map)
+    end
+  end
+
+  defp compute_entry_match_results(current_hit_map, key, value) do
+    Enum.map(current_hit_map, fn {{_, {key_type, value_type}} = hit_map_key, _hits} ->
+      {hit_map_key, match_type(key, key_type), match_type(value, value_type)}
+    end)
+  end
+
+  defp process_full_hits(full_hits, current_hit_map) do
+    Enum.reduce(full_hits, current_hit_map, fn {hit_map_key, _, _}, current_current_hit_map ->
+      Map.update!(current_current_hit_map, hit_map_key, fn hits -> hits + 1 end)
+    end)
+  end
+
+  defp process_key_hits(entry_match_results, key, value) do
+    case filter_key_hits(entry_match_results) do
+      [] -> map_key_types_and_reasons(entry_match_results, key)
+      key_hits when is_list(key_hits) -> map_value_types_and_reasons(key_hits, key, value)
+    end
+  end
+
+  defp map_key_types_and_reasons(entry_match_results, key) do
+    case key_types_and_reasons(entry_match_results) do
+      [{key_type, key_reasons}] ->
+        {:error, [{:map_key_type_mismatch, key, key_type} | key_reasons]}
+
+      types_and_reasons when is_list(types_and_reasons) ->
+        {:error,
+         [
+           {:map_key_type_mismatch, key,
+            Enum.map(types_and_reasons, fn {key_type, _} -> key_type end)}
+         ]}
+    end
+  end
+
+  defp key_types_and_reasons(entry_match_results) do
+    Enum.map(entry_match_results, fn {{_, {key_type, _}}, {:error, key_reasons}, _} ->
+      {key_type, key_reasons}
+    end)
+  end
+
+  defp map_value_types_and_reasons(key_hits, key, value) do
+    case value_types_and_reasons(key_hits) do
+      [{value_type, value_reasons}] ->
+        {:error, [{:map_value_type_mismatch, key, value, value_type} | value_reasons]}
+
+      types_and_reasons ->
+        {:error,
+         [
+           {:map_value_type_mismatch, key, value,
+            Enum.map(types_and_reasons, fn {_, value_type} -> value_type end)}
+         ]}
+    end
+  end
+
+  defp value_types_and_reasons(key_hits) do
+    Enum.map(key_hits, fn {{_, {_, value_type}}, _, {:error, value_reasons}} ->
+      {value_type, value_reasons}
+    end)
+  end
+
+  defp filter_full_hits(entry_match_results) do
+    Enum.filter(entry_match_results, fn
+      {_, :ok, :ok} -> true
+      {_, _, _} -> false
+    end)
+  end
+
+  defp filter_key_hits(entry_match_results) do
+    Enum.filter(entry_match_results, fn
+      {_, :ok, _} -> true
+      {_, _, _} -> false
+    end)
+  end
+
+  defp find_unfulfilled_type(required_hits) do
+    Enum.find(required_hits, fn
+      {{:required, _}, 0} -> true
+      {_, _} -> false
+    end)
+  end
+
+  defp process_unfulfilled_type(unfulfilled_type) do
+    case unfulfilled_type do
+      {{_, {{:atom, _, :__struct__}, {:atom, _, expected_struct_name}}}, _} ->
+        {:error, [{:struct_name_type_mismatch, nil, expected_struct_name}]}
+
+      {{_, {key_type, value_type}}, _} ->
+        {:error,
+         [
+           {:required_field_unfulfilled_map_type_mismatch,
+            {:type, 0, :map_field_exact, [key_type, value_type]}}
+         ]}
+
+      nil ->
+        :ok
+    end
   end
 end
