@@ -14,6 +14,22 @@ defmodule Hammox.TypeMatchError do
     }
   end
 
+  defp message_string(reasons) when is_list(reasons) do
+    reasons
+    |> Enum.with_index()
+    |> Enum.map_join("\n\n", fn {reason, index} ->
+      padding = put_padding(index)
+
+      reason
+      |> human_reason()
+      |> String.replace_prefix("", padding)
+    end)
+  end
+
+  defp message_string(reason) when is_tuple(reason) do
+    message_string([reason])
+  end
+
   defp human_reason({:arg_type_mismatch, index, value, type}) do
     "#{Ordinal.ordinalize(index + 1)} argument value #{custom_inspect(value)} does not match #{Ordinal.ordinalize(index + 1)} parameter's type #{type_to_string(type)}."
   end
@@ -95,22 +111,6 @@ defmodule Hammox.TypeMatchError do
     "Value #{custom_inspect(value)} does not implement the #{protocol_name} protocol."
   end
 
-  defp message_string(reasons) when is_list(reasons) do
-    reasons
-    |> Enum.with_index()
-    |> Enum.map_join("\n\n", fn {reason, index} ->
-      padding = put_padding(index)
-
-      reason
-      |> human_reason()
-      |> String.replace_prefix("", padding)
-    end)
-  end
-
-  defp message_string(reason) when is_tuple(reason) do
-    message_string([reason])
-  end
-
   defp type_to_string({:type, _, :map_field_exact, [type1, type2]}) do
     "required(#{type_to_string(type1)}) => #{type_to_string(type2)}"
   end
@@ -135,19 +135,27 @@ defmodule Hammox.TypeMatchError do
   end
 
   defp format_multiple(type_string) do
-    padding = "\n" <> get_padding()
+    if pretty_print() do
+      padding = get_padding()
 
-    type_string
-    |> String.replace(" | ", padding <> " | ")
-    |> String.replace_prefix("", padding)
+      type_string
+      |> String.replace(" | ", "\n" <> padding <> " | ")
+      |> String.replace_prefix("", "\n" <> padding)
+    else
+      type_string
+    end
   end
 
   defp custom_inspect(value) do
-    padding = get_padding()
+    if pretty_print() do
+      padding = get_padding()
 
-    value
-    |> inspect(limit: :infinity, printable_limit: 500, pretty: true)
-    |> String.replace("\n", "\n" <> padding)
+      value
+      |> inspect(limit: :infinity, printable_limit: 500, pretty: true)
+      |> String.replace("\n", "\n" <> padding)
+    else
+      inspect(value)
+    end
   end
 
   defp put_padding(level) when is_integer(level) do
@@ -164,5 +172,9 @@ defmodule Hammox.TypeMatchError do
 
   defp get_padding() do
     Process.get(:padding)
+  end
+
+  defp pretty_print do
+    Application.get_env(:hammox, :pretty)
   end
 end

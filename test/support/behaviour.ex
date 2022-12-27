@@ -26,7 +26,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_bitstring_size_literal() :: <<_::3>>
   @callback foo_bitstring_unit_literal() :: <<_::_*3>>
   @callback foo_bitstring_size_unit_literal() :: <<_::2, _::_*3>>
-  @callback foo_nullary_function_literal() :: (-> :ok)
+  @callback foo_nullary_function_literal() :: (() -> :ok)
   @callback foo_binary_function_literal() :: (:a, :b -> :ok)
   @callback foo_any_arity_function_literal() :: (... -> :ok)
   @callback foo_integer_literal() :: 1
