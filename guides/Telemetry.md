@@ -40,6 +40,11 @@
   - `[:hammox, :verify_on_exit!, :start]`
     - metadata:
       - `context`: Context passed into `verify_on_exit!` setup function
+  - `[:hammox, :deny, :start]`
+    - metadata:
+      - `mock`: Name of the mock/behaviour
+      - `function_name`: Name of the function that is being mocked
+      - `arity`: The arity of the function
 
 ## Stop Events
   - `[:hammox, :expect, :stop]`
@@ -66,6 +71,11 @@
     - metadata: none
   -  `[:hammox, :verify_on_exit!, :stop]`
     - metadata: none
+  - `[:hammox, :deny, :stop]`
+    - metadata:
+      - `mock`: Name of the mock/behaviour
+      - `func`: Name of the function that is being mocked
+      - `arity`: The arity of the function
 
 ## Exception Events
   - `[:hammox, :expect, :exception]`
@@ -88,6 +98,8 @@
     - metadata: none
   -  `[:hammox, :verify_on_exit!, :exception]`
     - metadata: none
+  - `[:hammox, :deny, :exception]`
+    - metadata: none
 
 ## Example Code
   All supported events can be generated and attached to with the following code:
@@ -103,7 +115,8 @@
           :fetch_typespecs,
           :cache_put,
           :stub,
-          :verify_on_exit!
+          :verify_on_exit!,
+          :deny
         ]
 
         Enum.map(event_list, fn event ->
