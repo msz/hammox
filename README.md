@@ -235,7 +235,7 @@ Parameter types and return types are not checked.
 
 ## Telemetry
 
-Hammox now includes telemetry events! See [Telemetry Guide](https://hexdocs.pm/hammox/Telemetry.html) for more information.
+Hammox now includes telemetry events! See [Telemetry Guide](guides/Telemetry.md) for more information.
 
 ## License
 
