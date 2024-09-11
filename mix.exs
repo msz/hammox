@@ -61,8 +61,10 @@ defmodule Hammox.MixProject do
   defp docs do
     [
       extras: [
-        LICENSE: [title: "License"],
-        "README.md": [title: "Overview"]
+        "README.md": [title: "Overview"],
+        "guides/Telemetry.md": [title: "Telemetry"],
+        LICENSE: [title: "License"]
+
       ],
       main: "readme",
       source_url: @source_url,
