@@ -313,7 +313,7 @@ defmodule Hammox.TypeEngine do
   end
 
   def match_type(value, {:type, _, :range, [{:integer, _, low}, {:integer, _, high}]})
-      when value in low..high do
+      when value in low..high//1 do
     :ok
   end
 
