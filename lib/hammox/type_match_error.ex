@@ -129,15 +129,20 @@ defmodule Hammox.TypeMatchError do
   defp type_to_string(type) do
     # We really want to access Code.Typespec.typespec_to_quoted/1 here but it's
     # private... this hack needs to suffice.
-    {:foo, type, []}
-    |> Code.Typespec.type_to_quoted()
-    |> Macro.to_string()
-    |> String.split("\n")
-    |> Enum.map_join(&String.replace(&1, ~r/ +/, " "))
-    |> String.split(" :: ")
-    |> case do
-      [_, type_string] -> type_string
-      [_, type_name, type_string] -> "#{type_string} (\"#{type_name}\")"
+    {:"::", _meta, [_name, quoted_type]} = Code.Typespec.type_to_quoted({:foo, type, []})
+
+    case quoted_type do
+      {:"::", _meta, [quoted_name, quoted_type]} ->
+        "#{quoted_to_string(quoted_type)} (\"#{quoted_to_string(quoted_name)}\")"
+
+      quoted_type ->
+        quoted_to_string(quoted_type)
     end
+  end
+
+  defp quoted_to_string(quoted) do
+    quoted
+    |> Macro.to_string()
+    |> String.replace(~r/\s+/, " ")
   end
 end

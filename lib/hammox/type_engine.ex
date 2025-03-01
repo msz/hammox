@@ -116,6 +116,28 @@ defmodule Hammox.TypeEngine do
     type_mismatch(value, type)
   end
 
+  def match_type(value, {:type, _, :record, record_types})
+      when is_tuple(value) and tuple_size(value) == length(record_types) do
+    error =
+      [Tuple.to_list(value), record_types, 0..(tuple_size(value) - 1)]
+      |> Enum.zip()
+      |> Enum.find_value(fn {elem, elem_type, index} ->
+        case match_type(elem, elem_type) do
+          :ok ->
+            nil
+
+          {:error, reasons} ->
+            {:error, [{:tuple_elem_type_mismatch, index, elem, elem_type} | reasons]}
+        end
+      end)
+
+    error || :ok
+  end
+
+  def match_type(value, {:type, _, :record, _} = type) do
+    type_mismatch(value, type)
+  end
+
   def match_type(value, {:type, _, :float, []}) when is_float(value) do
     :ok
   end
