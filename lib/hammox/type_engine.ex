@@ -97,7 +97,7 @@ defmodule Hammox.TypeEngine do
   def match_type(value, {:type, _, :tuple, tuple_types})
       when is_tuple(value) and tuple_size(value) == length(tuple_types) do
     error =
-      [Tuple.to_list(value), tuple_types, 0..(tuple_size(value) - 1)]
+      [Tuple.to_list(value), tuple_types, 0..(tuple_size(value) - 1)//1]
       |> Enum.zip()
       |> Enum.find_value(fn {elem, elem_type, index} ->
         case match_type(elem, elem_type) do
