@@ -2,7 +2,7 @@ defmodule Hammox.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/msz/hammox"
-  @version "0.7.0"
+  @version "0.7.1"
 
   def project do
     [
@@ -64,7 +64,6 @@ defmodule Hammox.MixProject do
         "README.md": [title: "Overview"],
         "guides/Telemetry.md": [title: "Telemetry"],
         LICENSE: [title: "License"]
-
       ],
       main: "readme",
       source_url: @source_url,
