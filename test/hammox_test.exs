@@ -2,6 +2,7 @@ defmodule HammoxTest do
   use ExUnit.Case, async: true
 
   import Hammox
+  import Hammox.Test.Behaviour, only: [foo_record: 0, foo_record: 1]
 
   defmock(TestMock, for: Hammox.Test.Behaviour)
 
@@ -166,6 +167,20 @@ defmodule HammoxTest do
 
     test "fail" do
       assert_fail(:foo_port, :baz)
+    end
+  end
+
+  describe "record(:foo_record)" do
+    test "pass" do
+      assert_pass(:foo_record, foo_record())
+    end
+
+    test "fail non-tuple" do
+      assert_fail(:foo_record, %{atom: :ok, list: ["ok"]})
+    end
+
+    test "fail non-record" do
+      assert_fail(:foo_record, {:foo_record, :ok})
     end
   end
 
@@ -726,6 +741,20 @@ defmodule HammoxTest do
 
     test "pass" do
       assert_pass(:foo_two_tuple_literal, {:ok, :details})
+    end
+  end
+
+  describe "record fields" do
+    test "pass" do
+      assert_pass(:foo_specific_record, foo_record(atom: :ok, list: ["a", "b", "c"]))
+    end
+
+    test "fail child type" do
+      assert_fail(:foo_specific_record, foo_record(atom: "ok", list: ["a", "b", "c"]))
+    end
+
+    test "fail overall type" do
+      assert_fail(:foo_specific_record, {:another_record, :ok, ["a", "b", "c"]})
     end
   end
 

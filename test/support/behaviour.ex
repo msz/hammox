@@ -1,5 +1,8 @@
 defmodule Hammox.Test.Behaviour do
   @moduledoc false
+  require Record
+
+  Record.defrecord(:foo_record, atom: nil, list: [])
 
   @callback foo_any() :: any()
   @callback foo_none() :: none()
@@ -7,6 +10,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_map() :: map()
   @callback foo_pid() :: pid()
   @callback foo_port() :: port()
+  @callback foo_record() :: record(:foo_record)
   @callback foo_reference() :: reference()
   @callback foo_struct() :: struct()
   @callback foo_tuple() :: tuple()
@@ -26,7 +30,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_bitstring_size_literal() :: <<_::3>>
   @callback foo_bitstring_unit_literal() :: <<_::_*3>>
   @callback foo_bitstring_size_unit_literal() :: <<_::2, _::_*3>>
-  @callback foo_nullary_function_literal() :: (() -> :ok)
+  @callback foo_nullary_function_literal() :: (-> :ok)
   @callback foo_binary_function_literal() :: (:a, :b -> :ok)
   @callback foo_any_arity_function_literal() :: (... -> :ok)
   @callback foo_integer_literal() :: 1
@@ -57,6 +61,7 @@ defmodule Hammox.Test.Behaviour do
   @callback foo_struct_fields_literal() :: %Hammox.Test.Struct{foo: number()}
   @callback foo_empty_tuple_literal() :: {}
   @callback foo_two_tuple_literal() :: {:ok, atom()}
+  @callback foo_specific_record() :: record(:foo_record, atom: atom(), list: list(binary()))
 
   @callback foo_term() :: term()
   @callback foo_arity() :: arity()
