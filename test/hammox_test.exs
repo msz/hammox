@@ -1367,6 +1367,13 @@ defmodule HammoxTest do
     end
   end
 
+  describe "deny/3" do
+    test "makes calls to the denied function raise" do
+      TestMock |> deny(:foo_none, 0)
+      assert_raise(Mox.UnexpectedCallError, fn -> TestMock.foo_none() end)
+    end
+  end
+
   defp assert_pass(function_name, value) do
     TestMock |> expect(function_name, fn -> value end)
     result = apply(TestMock, function_name, [])
