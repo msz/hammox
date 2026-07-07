@@ -82,10 +82,6 @@ defmodule Hammox.TypeEngine do
     type_mismatch(value, type)
   end
 
-  def match_type(value, {:remote_type, 0, [{:atom, 0, :elixir}, {:atom, 0, :struct}, []]} = type) do
-    if Map.has_key?(value, :__struct__), do: :ok, else: type_mismatch(value, type)
-  end
-
   def match_type(value, {:type, _, :tuple, :any}) when is_tuple(value) do
     :ok
   end
