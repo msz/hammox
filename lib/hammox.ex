@@ -314,7 +314,7 @@ defmodule Hammox do
         {key, value}
       end)
     end)
-    |> Enum.into(%{})
+    |> Map.new()
   end
 
   defp wrap(mock, name, code) do
@@ -329,68 +329,24 @@ defmodule Hammox do
     end
   end
 
-  defp protected(code, typespecs, 0) do
-    fn ->
-      protected_code(code, typespecs, [])
+  # The BEAM limits functions to 255 arguments, and the two variables
+  # captured by the wrapper fun (code, typespecs) count against that
+  # limit, so 253 is the highest arity we can generate.
+  @max_protect_arity 253
+
+  for arity <- 0..@max_protect_arity do
+    args = Macro.generate_arguments(arity, __MODULE__)
+
+    defp protected(code, typespecs, unquote(arity)) do
+      fn unquote_splicing(args) ->
+        protected_code(code, typespecs, unquote(args))
+      end
     end
   end
 
-  defp protected(code, typespecs, 1) do
-    fn arg1 ->
-      protected_code(code, typespecs, [arg1])
-    end
-  end
-
-  defp protected(code, typespecs, 2) do
-    fn arg1, arg2 ->
-      protected_code(code, typespecs, [arg1, arg2])
-    end
-  end
-
-  defp protected(code, typespecs, 3) do
-    fn arg1, arg2, arg3 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3])
-    end
-  end
-
-  defp protected(code, typespecs, 4) do
-    fn arg1, arg2, arg3, arg4 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4])
-    end
-  end
-
-  defp protected(code, typespecs, 5) do
-    fn arg1, arg2, arg3, arg4, arg5 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5])
-    end
-  end
-
-  defp protected(code, typespecs, 6) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6])
-    end
-  end
-
-  defp protected(code, typespecs, 7) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
-    end
-  end
-
-  defp protected(code, typespecs, 8) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
-    end
-  end
-
-  defp protected(code, typespecs, 9) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
-    end
-  end
-
-  defp protected(_code, _typespec, arity) when arity > 9 do
-    raise "Hammox only supports protecting functions with arity up to 9. Why do you need over 9 parameters anyway?"
+  defp protected(_code, _typespec, arity) when arity > @max_protect_arity do
+    raise "Hammox cannot protect functions with arity above #{@max_protect_arity}. The BEAM " <>
+            "limits functions to 255 arguments and the protecting wrapper needs two of them."
   end
 
   defp protected_code(code, typespecs, args) do
@@ -460,7 +416,7 @@ defmodule Hammox do
     Telemetry.span([:hammox, :match_args], %{}, fn ->
       result =
         args
-        |> Enum.zip(0..(length(args) - 1))
+        |> Enum.with_index()
         |> Enum.map(fn {arg, index} ->
           arg_type = arg_typespec(typespec, index)
 
@@ -552,12 +508,10 @@ defmodule Hammox do
           [{:type, _, :fun, [{:type, _, :product, args}, return_value]}, constraints]}
        ) do
     type_lookup_map =
-      constraints
-      |> Enum.map(fn {:type, _, :constraint,
-                      [{:atom, _, :is_subtype}, [{:var, _, var_name}, type]]} ->
+      Map.new(constraints, fn {:type, _, :constraint,
+                               [{:atom, _, :is_subtype}, [{:var, _, var_name}, type]]} ->
         {var_name, type}
       end)
-      |> Enum.into(%{})
 
     new_args =
       Enum.map(

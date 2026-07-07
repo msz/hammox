@@ -60,6 +60,26 @@ defmodule HammoxTest do
       end)
     end
 
+    test "protects functions with arity up to 253" do
+      fun =
+        Hammox.protect(
+          {Hammox.Test.LargeArityImplementation, :foo, 253},
+          Hammox.Test.LargeArityBehaviour
+        )
+
+      assert 1 == apply(fun, List.duplicate(0, 253))
+      assert_raise(Hammox.TypeMatchError, fn -> apply(fun, List.duplicate(:atom, 253)) end)
+    end
+
+    test "throws when protecting a function with arity above 253" do
+      assert_raise(RuntimeError, ~r/arity above 253/, fn ->
+        Hammox.protect(
+          {Hammox.Test.LargeArityImplementation, :beyond_limit_foo, 254},
+          Hammox.Test.LargeArityBehaviour
+        )
+      end)
+    end
+
     test "decorate multiple functions inside behaviour-implementation module" do
       assert %{foo_0: _, other_foo_1: _} =
                Hammox.protect(Hammox.Test.BehaviourImplementation,

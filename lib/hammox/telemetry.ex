@@ -51,8 +51,6 @@ defmodule Hammox.Telemetry do
   @behaviour Hammox.Telemetry.Behaviour
   @impl Hammox.Telemetry.Behaviour
   def span(telemetry_tags, telemetry_metadata, func_to_wrap) do
-    # telemetry_module().span(telemetry_tags, telemetry_metadata, func_to_wrap)
-    tm = telemetry_module()
-    tm.span(telemetry_tags, telemetry_metadata, func_to_wrap)
+    telemetry_module().span(telemetry_tags, telemetry_metadata, func_to_wrap)
   end
 end
