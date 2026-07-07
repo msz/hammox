@@ -314,7 +314,7 @@ defmodule Hammox do
         {key, value}
       end)
     end)
-    |> Enum.into(%{})
+    |> Map.new()
   end
 
   defp wrap(mock, name, code) do
@@ -502,12 +502,10 @@ defmodule Hammox do
           [{:type, _, :fun, [{:type, _, :product, args}, return_value]}, constraints]}
        ) do
     type_lookup_map =
-      constraints
-      |> Enum.map(fn {:type, _, :constraint,
-                      [{:atom, _, :is_subtype}, [{:var, _, var_name}, type]]} ->
+      Map.new(constraints, fn {:type, _, :constraint,
+                               [{:atom, _, :is_subtype}, [{:var, _, var_name}, type]]} ->
         {var_name, type}
       end)
-      |> Enum.into(%{})
 
     new_args =
       Enum.map(
