@@ -1,20 +1,83 @@
-on: push
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    name: Test (Elixir ${{ matrix.pair.elixir }} / OTP ${{ matrix.pair.otp }})
+    env:
+      MIX_ENV: test
     strategy:
+      fail-fast: false
       matrix:
-        otp: ['25.0']
-        elixir: ['1.13.4']
+        include:
+          - pair:
+              elixir: "1.15"
+              otp: "24"
+          - pair:
+              elixir: "1.18"
+              otp: "27"
+            lint: lint
     steps:
-      - uses: actions/checkout@v2
-      - uses: erlef/setup-beam@v1
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up Elixir and OTP
+        uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
-      - run: mix deps.get
-      - run: mix format --check-formatted
-      - run: mix credo --strict
-      - run: mix test
+          otp-version: ${{ matrix.pair.otp }}
+          elixir-version: ${{ matrix.pair.elixir }}
+
+      - name: Restore dependency and build cache
+        uses: actions/cache/restore@v5
+        id: mix-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ matrix.pair.elixir }}-${{ matrix.pair.otp }}-${{ hashFiles('**/mix.lock') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.pair.elixir }}-${{ matrix.pair.otp }}-${{ hashFiles('**/mix.lock') }}-
+            ${{ runner.os }}-mix-${{ matrix.pair.elixir }}-${{ matrix.pair.otp }}-
+
+      - name: Fetch and compile dependencies
+        run: mix do deps.get --check-locked, deps.compile
+
+      - name: Save dependency and build cache
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ steps.mix-cache.outputs.cache-primary-key }}
+
+      - name: Check formatting
+        run: mix format --check-formatted
+        if: ${{ matrix.lint }}
+
+      - name: Check for unused dependencies
+        run: mix deps.unlock --check-unused
+        if: ${{ matrix.lint }}
+
+      - name: Compile without warnings
+        run: mix compile --warnings-as-errors
+        if: ${{ matrix.lint }}
+
+      - name: Run Credo
+        run: mix credo --strict
+        if: ${{ matrix.lint }}
+
+      - name: Run tests
+        run: mix test
