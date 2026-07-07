@@ -460,7 +460,7 @@ defmodule Hammox do
     Telemetry.span([:hammox, :match_args], %{}, fn ->
       result =
         args
-        |> Enum.zip(0..(length(args) - 1))
+        |> Enum.with_index()
         |> Enum.map(fn {arg, index} ->
           arg_type = arg_typespec(typespec, index)
 

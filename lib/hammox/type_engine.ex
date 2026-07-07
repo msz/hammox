@@ -97,9 +97,11 @@ defmodule Hammox.TypeEngine do
   def match_type(value, {:type, _, :tuple, tuple_types})
       when is_tuple(value) and tuple_size(value) == length(tuple_types) do
     error =
-      [Tuple.to_list(value), tuple_types, 0..(tuple_size(value) - 1)//1]
-      |> Enum.zip()
-      |> Enum.find_value(fn {elem, elem_type, index} ->
+      value
+      |> Tuple.to_list()
+      |> Enum.zip(tuple_types)
+      |> Enum.with_index()
+      |> Enum.find_value(fn {{elem, elem_type}, index} ->
         case match_type(elem, elem_type) do
           :ok ->
             nil
@@ -119,9 +121,11 @@ defmodule Hammox.TypeEngine do
   def match_type(value, {:type, _, :record, record_types})
       when is_tuple(value) and tuple_size(value) == length(record_types) do
     error =
-      [Tuple.to_list(value), record_types, 0..(tuple_size(value) - 1)]
-      |> Enum.zip()
-      |> Enum.find_value(fn {elem, elem_type, index} ->
+      value
+      |> Tuple.to_list()
+      |> Enum.zip(record_types)
+      |> Enum.with_index()
+      |> Enum.find_value(fn {{elem, elem_type}, index} ->
         case match_type(elem, elem_type) do
           :ok ->
             nil
@@ -217,7 +221,7 @@ defmodule Hammox.TypeEngine do
   def match_type(value, {:type, _, :nonempty_list, [elem_typespec]}) when is_list(value) do
     error =
       value
-      |> Enum.zip(0..length(value))
+      |> Enum.with_index()
       |> Enum.find_value(fn {elem, index} ->
         case match_type(elem, elem_typespec) do
           {:error, reasons} ->

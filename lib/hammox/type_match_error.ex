@@ -97,7 +97,7 @@ defmodule Hammox.TypeMatchError do
 
   defp message_string(reasons) when is_list(reasons) do
     reasons
-    |> Enum.zip(0..length(reasons))
+    |> Enum.with_index()
     |> Enum.map_join("\n", fn {reason, index} ->
       reason
       |> human_reason()
