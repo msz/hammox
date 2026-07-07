@@ -71,10 +71,8 @@ defmodule Hammox.TypeEngine do
     type_mismatch(value, type)
   end
 
-  def match_type(
-        %{__struct__: _},
-        {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]}
-      ) do
+  def match_type(value, {:remote_type, _, [{:atom, _, :elixir}, {:atom, _, :struct}, []]})
+      when is_struct(value) do
     :ok
   end
 
