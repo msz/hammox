@@ -27,6 +27,10 @@ defmodule Hammox.MixProject do
     ]
   end
 
+  def cli do
+    [preferred_envs: [ci: :test]]
+  end
+
   defp aliases do
     [
       ci: [
