@@ -329,7 +329,12 @@ defmodule Hammox do
     end
   end
 
-  for arity <- 0..9 do
+  # The BEAM limits functions to 255 arguments, and the two variables
+  # captured by the wrapper fun (code, typespecs) count against that
+  # limit, so 253 is the highest arity we can generate.
+  @max_protect_arity 253
+
+  for arity <- 0..@max_protect_arity do
     args = Macro.generate_arguments(arity, __MODULE__)
 
     defp protected(code, typespecs, unquote(arity)) do
@@ -339,8 +344,9 @@ defmodule Hammox do
     end
   end
 
-  defp protected(_code, _typespec, arity) when arity > 9 do
-    raise "Hammox only supports protecting functions with arity up to 9. Why do you need over 9 parameters anyway?"
+  defp protected(_code, _typespec, arity) when arity > @max_protect_arity do
+    raise "Hammox cannot protect functions with arity above #{@max_protect_arity}. The BEAM " <>
+            "limits functions to 255 arguments and the protecting wrapper needs two of them."
   end
 
   defp protected_code(code, typespecs, args) do
