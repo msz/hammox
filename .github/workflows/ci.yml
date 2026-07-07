@@ -41,7 +41,7 @@ jobs:
           elixir-version: ${{ matrix.pair.elixir }}
 
       - name: Restore dependency and build cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         id: mix-cache
         with:
           path: |
@@ -56,7 +56,7 @@ jobs:
         run: mix do deps.get --check-locked, deps.compile
 
       - name: Save dependency and build cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             deps
