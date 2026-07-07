@@ -45,7 +45,7 @@ defmodule Hammox.MixProject do
 
   defp deps do
     [
-      {:mox, "~> 1.0"},
+      {:mox, "~> 1.2"},
       {:ordinal, "~> 0.1"},
       {:telemetry, "~> 1.0"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
