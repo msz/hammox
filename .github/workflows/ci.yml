@@ -32,7 +32,7 @@ jobs:
             lint: lint
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Elixir and OTP
         uses: erlef/setup-beam@v1
