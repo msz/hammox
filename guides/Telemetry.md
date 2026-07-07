@@ -72,10 +72,7 @@
   -  `[:hammox, :verify_on_exit!, :stop]`
     - metadata: none
   - `[:hammox, :deny, :stop]`
-    - metadata:
-      - `mock`: Name of the mock/behaviour
-      - `func`: Name of the function that is being mocked
-      - `arity`: The arity of the function
+    - metadata: none
 
 ## Exception Events
   - `[:hammox, :expect, :exception]`
