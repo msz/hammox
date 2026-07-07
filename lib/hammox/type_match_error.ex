@@ -110,12 +110,7 @@ defmodule Hammox.TypeMatchError do
   end
 
   defp leftpad(string, level) do
-    padding =
-      for(_ <- 0..level, do: "  ")
-      |> Enum.drop(1)
-      |> Enum.join()
-
-    padding <> string
+    String.duplicate("  ", level) <> string
   end
 
   defp type_to_string({:type, _, :map_field_exact, [type1, type2]}) do
