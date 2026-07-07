@@ -329,63 +329,13 @@ defmodule Hammox do
     end
   end
 
-  defp protected(code, typespecs, 0) do
-    fn ->
-      protected_code(code, typespecs, [])
-    end
-  end
+  for arity <- 0..9 do
+    args = Macro.generate_arguments(arity, __MODULE__)
 
-  defp protected(code, typespecs, 1) do
-    fn arg1 ->
-      protected_code(code, typespecs, [arg1])
-    end
-  end
-
-  defp protected(code, typespecs, 2) do
-    fn arg1, arg2 ->
-      protected_code(code, typespecs, [arg1, arg2])
-    end
-  end
-
-  defp protected(code, typespecs, 3) do
-    fn arg1, arg2, arg3 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3])
-    end
-  end
-
-  defp protected(code, typespecs, 4) do
-    fn arg1, arg2, arg3, arg4 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4])
-    end
-  end
-
-  defp protected(code, typespecs, 5) do
-    fn arg1, arg2, arg3, arg4, arg5 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5])
-    end
-  end
-
-  defp protected(code, typespecs, 6) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6])
-    end
-  end
-
-  defp protected(code, typespecs, 7) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7])
-    end
-  end
-
-  defp protected(code, typespecs, 8) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8])
-    end
-  end
-
-  defp protected(code, typespecs, 9) do
-    fn arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 ->
-      protected_code(code, typespecs, [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9])
+    defp protected(code, typespecs, unquote(arity)) do
+      fn unquote_splicing(args) ->
+        protected_code(code, typespecs, unquote(args))
+      end
     end
   end
 
