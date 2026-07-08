@@ -131,6 +131,16 @@ defmodule Hammox.Test.Behaviour do
         }
   @callback foo_multiline_param_type() :: multiline_param_type(:arg)
 
+  @type tree :: :leaf | {:node, tree, tree}
+  @callback foo_recursive_tree() :: tree
+
+  @type self_referential :: self_referential | integer()
+  @callback foo_self_referential() :: self_referential
+
+  @type mutual_a :: mutual_b | integer()
+  @type mutual_b :: mutual_a | atom()
+  @callback foo_mutually_recursive() :: mutual_a
+
   @typep private_type :: :private_value
   @type type_including_private_type :: private_type()
   @callback foo_private_type() :: type_including_private_type()
