@@ -2,7 +2,7 @@ defmodule Hammox.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/msz/hammox"
-  @version "0.7.1"
+  @version "1.0.0"
 
   def project do
     [
