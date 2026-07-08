@@ -37,7 +37,7 @@ defmodule Hammox.Protect do
     behaviour: Hammox.Test.AdditionalBehaviour
     # with no `funs` pt provided after `AdditionalBehaviour`, all callbacks
     # will be protected
-  ````
+  ```
   """
   alias Hammox.Utils
 
