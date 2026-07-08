@@ -598,20 +598,30 @@ defmodule Hammox.TypeEngine do
   end
 
   defp do_resolve_remote_type(
-         {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]}
+         {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]} = remote_type
        )
        when is_atom(module_name) and is_atom(type_name) and is_list(args) do
+    with {:ok, body} <- expand_remote_type(remote_type) do
+      visited = MapSet.new([{module_name, type_name, length(args)}])
+      {:ok, break_cycles(body, visited)}
+    end
+  end
+
+  # Fetch a remote type's definition and substitute its arguments, yielding the
+  # type body with any local user types rewritten as remote references. This
+  # expands a single level only; nested references stay as remote types.
+  defp expand_remote_type(
+         {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]}
+       ) do
     with {:ok, types} <- fetch_types(module_name),
          {:ok, {type_kind, {_name, type, vars}}} when type_kind in @type_kinds <-
            get_type(types, type_name, length(args)) do
-      resolved_type =
+      body =
         args
         |> Enum.zip(vars)
-        |> Enum.reduce(type, fn {arg, var}, resolved_type ->
-          fill_type_var(resolved_type, var, arg)
-        end)
+        |> Enum.reduce(type, fn {arg, var}, acc -> fill_type_var(acc, var, arg) end)
 
-      {:ok, Utils.replace_user_types(resolved_type, module_name)}
+      {:ok, Utils.replace_user_types(body, module_name)}
     else
       {:error, {:module_fetch_failure, _}} = error ->
         error
@@ -619,6 +629,57 @@ defmodule Hammox.TypeEngine do
       {:error, {:type_not_found, {type_name, arity}}} ->
         {:error, {:remote_type_fetch_failure, {module_name, type_name, arity}}}
     end
+  end
+
+  # A type that reaches itself through only "transparent" nodes (unions and
+  # annotations), without passing through a value-consuming constructor, is
+  # non-productive: matching it would recurse forever without ever consuming
+  # part of the value. This covers direct self-reference (`@type t :: t | ...`)
+  # as well as mutual recursion (`a :: b | ...`, `b :: a | ...`). We follow
+  # transparent references eagerly, tracking the types on the current path in
+  # `visited` (keyed by {module, name, arity}, which also bounds the walk), and
+  # replace any reference that closes a cycle with `none()`, so a surrounding
+  # union falls through to its productive members. References sitting inside a
+  # value-consuming constructor (tuple, list, map, ...) are genuine structural
+  # recursion; we leave them as lazy remote types, since matching descends into
+  # a smaller value before reaching them again.
+  defp break_cycles({:type, position, :union, members}, visited) do
+    {:type, position, :union, Enum.map(members, &break_cycles(&1, visited))}
+  end
+
+  defp break_cycles({:ann_type, position, [var, inner]}, visited) do
+    {:ann_type, position, [var, break_cycles(inner, visited)]}
+  end
+
+  defp break_cycles(
+         {:remote_type, _, [{:atom, _, module_name}, {:atom, _, type_name}, args]} = remote_type,
+         visited
+       ) do
+    key = {module_name, type_name, length(args)}
+
+    cond do
+      MapSet.member?(visited, key) ->
+        {:type, 0, :none, []}
+
+      # Protocol `t()` references are matched specially at runtime (protocol
+      # dispatch), so leave them lazy rather than inlining their definition.
+      protocol?(module_name) ->
+        remote_type
+
+      true ->
+        case expand_remote_type(remote_type) do
+          {:ok, body} -> break_cycles(body, MapSet.put(visited, key))
+          {:error, _} -> remote_type
+        end
+    end
+  end
+
+  defp break_cycles(other, _visited) do
+    other
+  end
+
+  defp protocol?(module_name) do
+    Code.ensure_loaded?(module_name) and function_exported?(module_name, :__protocol__, 1)
   end
 
   defp fill_type_var(type, var, arg) do

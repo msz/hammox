@@ -1341,6 +1341,34 @@ defmodule HammoxTest do
     end
   end
 
+  describe "recursive types" do
+    test "structurally recursive type passes" do
+      assert_pass(:foo_recursive_tree, {:node, :leaf, {:node, :leaf, :leaf}})
+    end
+
+    test "structurally recursive type fails" do
+      assert_fail(:foo_recursive_tree, {:node, :leaf, :not_a_tree})
+    end
+
+    test "directly self-referential type passes on a productive union member" do
+      assert_pass(:foo_self_referential, 42)
+    end
+
+    test "directly self-referential type fails without looping" do
+      assert_fail(:foo_self_referential, :not_an_integer)
+    end
+
+    test "mutually recursive types pass on a productive union member" do
+      # mutual_a resolves to integer() | atom()
+      assert_pass(:foo_mutually_recursive, 42)
+      assert_pass(:foo_mutually_recursive, :an_atom)
+    end
+
+    test "mutually recursive types fail without looping" do
+      assert_fail(:foo_mutually_recursive, "neither integer nor atom")
+    end
+  end
+
   describe "guarded functions" do
     test "pass" do
       TestMock |> expect(:foo_guarded, fn arg -> [arg] end)
