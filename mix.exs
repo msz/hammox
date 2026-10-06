@@ -60,7 +60,7 @@ defmodule Hammox.MixProject do
       maintainers: [
         "Michał Szewczak"
       ],
-      files: ["lib", "mix.exs", "LICENSE", "README.md", "CHANGELOG.md"],
+      files: ["lib", "mix.exs", "LICENSE", "README.md", "CHANGELOG.md", "usage-rules.md"],
       links: %{
         "GitHub" => @source_url,
         "Mox" => "https://hex.pm/packages/mox"
